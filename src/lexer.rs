@@ -382,7 +382,9 @@ impl Cursor<'_> {
     fn string(&mut self) -> TokenKind {
         let mut escaped = false;
         while let Some(ch) = self.bump() {
-            if escaped {
+            if ch == '\n' {
+                break;
+            } else if escaped {
                 escaped = false;
             } else if ch == '\\' {
                 escaped = true;
