@@ -174,34 +174,34 @@ impl Cursor<'_> {
         self.initial_len - self.chars.as_str().len()
     }
 
-    pub fn first(&self) -> char {
+    fn first(&self) -> char {
         self.chars.clone().next().unwrap_or(EOF_CHAR)
     }
 
-    pub fn second(&self) -> char {
+    fn second(&self) -> char {
         let mut iter = self.chars.clone();
         iter.next();
         iter.next().unwrap_or(EOF_CHAR)
     }
 
-    pub fn third(&self) -> char {
+    fn third(&self) -> char {
         let mut iter = self.chars.clone();
         iter.next();
         iter.next();
         iter.next().unwrap_or(EOF_CHAR)
     }
 
-    pub fn bump(&mut self) -> Option<char> {
+    fn bump(&mut self) -> Option<char> {
         self.chars.next()
     }
 
-    pub fn eat_while(&mut self, mut predicate: impl FnMut(char) -> bool) {
+    fn eat_while(&mut self, mut predicate: impl FnMut(char) -> bool) {
         while predicate(self.first()) && !self.is_eof() {
             self.bump();
         }
     }
 
-    pub fn followed_by(&mut self, s: &str) -> bool {
+    fn followed_by(&mut self, s: &str) -> bool {
         if self.chars.as_str().starts_with(s) {
             self.chars = self.chars.as_str()[s.len()..].chars();
             true
@@ -341,12 +341,12 @@ impl Cursor<'_> {
         }
     }
 
-    pub fn line_comment(&mut self) -> TokenKind {
+    fn line_comment(&mut self) -> TokenKind {
         self.eat_while(|ch| ch != '\n');
         TokenKind::LineComment
     }
 
-    pub fn block_comment(&mut self) -> TokenKind {
+    fn block_comment(&mut self) -> TokenKind {
         self.bump(); // `*`
         while let Some(ch) = self.bump() {
             if ch == '*' && self.first() == '/' {
@@ -357,17 +357,17 @@ impl Cursor<'_> {
         TokenKind::BlockComment { terminated: false }
     }
 
-    pub fn whitespace(&mut self) -> TokenKind {
+    fn whitespace(&mut self) -> TokenKind {
         self.eat_while(char::is_whitespace);
         TokenKind::Whitespace
     }
 
-    pub fn variable(&mut self) -> TokenKind {
+    fn variable(&mut self) -> TokenKind {
         self.eat_while(|ch| ch == '_' || ch.is_ascii_alphanumeric());
         TokenKind::Variable
     }
 
-    pub fn functor(&mut self) -> TokenKind {
+    fn functor(&mut self) -> TokenKind {
         loop {
             self.eat_while(|ch| ch == '_' || ch.is_ascii_alphanumeric());
             if self.first() == '.' && self.second().is_ascii_lowercase() {
@@ -379,7 +379,7 @@ impl Cursor<'_> {
         }
     }
 
-    pub fn string(&mut self) -> TokenKind {
+    fn string(&mut self) -> TokenKind {
         let mut escaped = false;
         while let Some(ch) = self.bump() {
             if escaped {
@@ -393,7 +393,7 @@ impl Cursor<'_> {
         TokenKind::String { terminated: false }
     }
 
-    pub fn number(&mut self) -> TokenKind {
+    fn number(&mut self) -> TokenKind {
         let mut kind = TokenKind::Integer;
         self.eat_while(|ch| ch.is_ascii_digit());
         if self.first() == '.' && self.second().is_ascii_digit() {
