@@ -1,5 +1,7 @@
 mod lexer;
 
 fn main() {
-    println!("Hello, world!");
+    for token in lexer::tokenize("abc // hello") {
+        dbg!(token);
+    }
 }
