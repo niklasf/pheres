@@ -292,7 +292,12 @@ impl Cursor<'_> {
                     _ => TokenKind::Or,
                 },
                 '+' => TokenKind::Plus,
-                '.' => TokenKind::Dot,
+                '.' => if self.first().is_ascii_lowercase() {
+                    self.bump();
+                    self.functor()
+                } else {
+                    TokenKind::Dot
+                },
                 ',' => TokenKind::Comma,
                 ';' => TokenKind::Semi,
                 '@' => TokenKind::At,
@@ -353,7 +358,14 @@ impl Cursor<'_> {
     }
 
     pub fn functor(&mut self) -> TokenKind {
-        self.eat_while(|ch| ch == '_' || ch == '.' || ch.is_ascii_alphanumeric());
-        TokenKind::Functor
+        loop {
+            self.eat_while(|ch| ch == '_' || ch.is_ascii_alphanumeric());
+            if self.first() == '.' && self.second().is_ascii_lowercase() {
+                self.bump();
+                self.bump();
+                continue;
+            }
+            return TokenKind::Functor;
+        }
     }
 }
