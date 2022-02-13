@@ -171,8 +171,14 @@ impl Cursor<'_> {
         self.initial_len - self.chars.as_str().len()
     }
 
-    pub fn peek(&self) -> char {
+    pub fn first(&self) -> char {
         self.chars.clone().next().unwrap_or(EOF_CHAR)
+    }
+
+    pub fn second(&self) -> char {
+        let mut iter = self.chars.clone();
+        iter.next();
+        iter.next().unwrap_or(EOF_CHAR)
     }
 
     pub fn bump(&mut self) -> char {
@@ -180,19 +186,117 @@ impl Cursor<'_> {
     }
 
     pub fn eat_while(&mut self, mut predicate: impl FnMut(char) -> bool) {
-        while predicate(self.peek()) && !self.is_eof() {
+        while predicate(self.first()) && !self.is_eof() {
             self.bump();
+        }
+    }
+
+    pub fn keyword(&mut self, keyword: &str) -> bool {
+        if self.chars.as_str().starts_with(keyword) {
+            self.chars = self.chars.as_str()[keyword.len()..].chars();
+            true
+        } else {
+            false
         }
     }
 
     pub fn advance_token(&mut self) -> Token {
         Token {
             kind: match self.bump() {
-                '/' => match self.peek() {
+                c if c.is_whitespace() => self.whitespace(),
+                '/' => match self.first() {
                     '/' => self.line_comment(),
                     '*' => self.block_comment(),
                     _ => TokenKind::Slash,
                 },
+                '#' => self.line_comment(),
+                '(' => TokenKind::OpenParen,
+                ')' => TokenKind::CloseParen,
+                '[' => TokenKind::OpenBracket,
+                ']' => TokenKind::CloseBracket,
+                '{' => TokenKind::OpenBrace,
+                '}' => TokenKind::CloseBrace,
+                '!' => match self.first() {
+                    '!' => {
+                        self.bump();
+                        TokenKind::BangBang
+                    }
+                    _ => TokenKind::Bang,
+                },
+                '?' => TokenKind::Question,
+                ':' => match self.first() {
+                    '-' => {
+                        self.bump();
+                        TokenKind::Define
+                    }
+                    _ => TokenKind::Colon,
+                },
+                '<' => match self.first() {
+                    '-' => {
+                        self.bump();
+                        TokenKind::Arrow
+                    }
+                    '=' => {
+                        self.bump();
+                        TokenKind::LtEq
+                    }
+                    _ => TokenKind::Lt,
+                },
+                '>' => match self.first() {
+                    '=' => {
+                        self.bump();
+                        TokenKind::GtEq
+                    }
+                    _ => TokenKind::Gt,
+                },
+                '=' => match (self.first(), self.second()) {
+                    ('=', _) => {
+                        self.bump();
+                        TokenKind::Equal
+                    }
+                    ('.', '.') => {
+                        self.bump();
+                        self.bump();
+                        TokenKind::Decompose
+                    }
+                    _ => TokenKind::Eq,
+                },
+                '*' => match self.first() {
+                    '*' => {
+                        self.bump();
+                        TokenKind::Pow
+                    }
+                    _ => TokenKind::Star,
+                },
+                '-' => match self.first() {
+                    '+' => {
+                        self.bump();
+                        TokenKind::MinusPlus
+                    }
+                    _ => TokenKind::Minus,
+                },
+                '&' => TokenKind::And,
+                '|' => match (self.first(), self.second()) {
+                    ('&', '|') => {
+                        self.bump();
+                        self.bump();
+                        TokenKind::ForkJoinAnd
+                    }
+                    ('|', '|') => {
+                        self.bump();
+                        self.bump();
+                        TokenKind::ForkJoinXor
+                    }
+                    _ => TokenKind::Or,
+                },
+                '+' => TokenKind::Plus,
+                '.' => TokenKind::Dot,
+                ',' => TokenKind::Comma,
+                ';' => TokenKind::Semi,
+                '@' => TokenKind::At,
+                'i' if self.keyword("f") => TokenKind::If,
+                'e' if self.keyword("lse") => TokenKind::Else,
+                '\\' if self.keyword("==") => TokenKind::NotEqual,
                 _ => TokenKind::Unknown,
             },
             len: self.len_consumed(),
@@ -206,5 +310,10 @@ impl Cursor<'_> {
 
     pub fn block_comment(&mut self) -> TokenKind {
         todo!()
+    }
+
+    pub fn whitespace(&mut self) -> TokenKind {
+        self.eat_while(char::is_whitespace);
+        TokenKind::Whitespace
     }
 }
