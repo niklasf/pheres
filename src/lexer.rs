@@ -181,8 +181,8 @@ impl Cursor<'_> {
         iter.next().unwrap_or(EOF_CHAR)
     }
 
-    pub fn bump(&mut self) -> char {
-        self.chars.next().unwrap()
+    pub fn bump(&mut self) -> Option<char> {
+        self.chars.next()
     }
 
     pub fn eat_while(&mut self, mut predicate: impl FnMut(char) -> bool) {
@@ -191,9 +191,9 @@ impl Cursor<'_> {
         }
     }
 
-    pub fn keyword(&mut self, keyword: &str) -> bool {
-        if self.chars.as_str().starts_with(keyword) {
-            self.chars = self.chars.as_str()[keyword.len()..].chars();
+    pub fn followed_by(&mut self, s: &str) -> bool {
+        if self.chars.as_str().starts_with(s) {
+            self.chars = self.chars.as_str()[s.len()..].chars();
             true
         } else {
             false
@@ -202,8 +202,8 @@ impl Cursor<'_> {
 
     pub fn advance_token(&mut self) -> Token {
         Token {
-            kind: match self.bump() {
-                c if c.is_whitespace() => self.whitespace(),
+            kind: match self.bump().unwrap() {
+                ch if ch.is_whitespace() => self.whitespace(),
                 '/' => match self.first() {
                     '/' => self.line_comment(),
                     '*' => self.block_comment(),
@@ -294,9 +294,19 @@ impl Cursor<'_> {
                 ',' => TokenKind::Comma,
                 ';' => TokenKind::Semi,
                 '@' => TokenKind::At,
-                'i' if self.keyword("f") => TokenKind::If,
-                'e' if self.keyword("lse") => TokenKind::Else,
-                '\\' if self.keyword("==") => TokenKind::NotEqual,
+                '\\' if self.followed_by("==") => TokenKind::NotEqual,
+                't' if self.followed_by("rue") => TokenKind::True,
+                'f' if self.followed_by("alse") => TokenKind::False,
+                'i' if self.followed_by("f") => TokenKind::If,
+                'e' if self.followed_by("lse") => TokenKind::Else,
+                'w' if self.followed_by("hile") => TokenKind::While,
+                'f' if self.followed_by("or") => TokenKind::For,
+                'i' if self.followed_by("nclude") => TokenKind::Include,
+                'b' if self.followed_by("egin") => TokenKind::Begin,
+                'e' if self.followed_by("nd") => TokenKind::End,
+                'n' if self.followed_by("ot") => TokenKind::Not,
+                'd' if self.followed_by("iv") => TokenKind::Div,
+                'm' if self.followed_by("od") => TokenKind::Mod,
                 _ => TokenKind::Unknown,
             },
             len: self.len_consumed(),
@@ -309,7 +319,14 @@ impl Cursor<'_> {
     }
 
     pub fn block_comment(&mut self) -> TokenKind {
-        todo!()
+        self.bump(); // `*`
+        while let Some(ch) = self.bump() {
+            if ch == '*' && self.first() == '/' {
+                self.bump();
+                return TokenKind::BlockComment { terminated: true }
+            }
+        }
+        TokenKind::BlockComment { terminated: false }
     }
 
     pub fn whitespace(&mut self) -> TokenKind {
