@@ -1,5 +1,4 @@
 use std::iter;
-use std::mem;
 use std::str::Chars;
 
 #[derive(Debug)]
@@ -23,8 +22,10 @@ pub enum TokenKind {
     Variable,
     /// `_`
     Wildcard,
-    /// `42e-3`
-    Number,
+    /// `42`
+    Integer,
+    /// `42.0` or `42e-3`
+    Float,
     /// `"foo\n"`
     String { terminated: bool },
 
@@ -183,6 +184,13 @@ impl Cursor<'_> {
         iter.next().unwrap_or(EOF_CHAR)
     }
 
+    pub fn third(&self) -> char {
+        let mut iter = self.chars.clone();
+        iter.next();
+        iter.next();
+        iter.next().unwrap_or(EOF_CHAR)
+    }
+
     pub fn bump(&mut self) -> Option<char> {
         self.chars.next()
     }
@@ -317,6 +325,7 @@ impl Cursor<'_> {
                 'm' if self.followed_by("od") => TokenKind::Mod,
                 ch if ch.is_ascii_uppercase() => self.variable(),
                 ch if ch.is_ascii_lowercase() => self.functor(),
+                ch if ch.is_ascii_digit() => self.number(),
                 '_' => {
                     self.eat_while(|ch| ch == '_');
                     if self.first().is_ascii_uppercase() {
@@ -382,5 +391,33 @@ impl Cursor<'_> {
             }
         }
         TokenKind::String { terminated: false }
+    }
+
+    pub fn number(&mut self) -> TokenKind {
+        let mut kind = TokenKind::Integer;
+        self.eat_while(|ch| ch.is_ascii_digit());
+        if self.first() == '.' && self.second().is_ascii_digit() {
+            self.bump();
+            self.bump();
+            self.eat_while(|ch| ch.is_ascii_digit());
+            kind = TokenKind::Float;
+        }
+        match (self.first(), self.second(), self.third()) {
+            ('e' | 'E', '+' | '-', ch) if ch.is_ascii_digit() => {
+                self.bump();
+                self.bump();
+                self.bump();
+                self.eat_while(|ch| ch.is_ascii_digit());
+                kind = TokenKind::Float;
+            },
+            ('e' | 'E', ch, _) if ch.is_ascii_digit() => {
+                self.bump();
+                self.bump();
+                self.eat_while(|ch| ch.is_ascii_digit());
+                kind = TokenKind::Float;
+            }
+            (_, _, _) => (),
+        }
+        kind
     }
 }
