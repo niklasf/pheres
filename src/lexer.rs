@@ -301,12 +301,14 @@ impl Cursor<'_> {
                     _ => TokenKind::Or,
                 },
                 '+' => TokenKind::Plus,
-                '.' => if self.first().is_ascii_lowercase() {
-                    self.bump();
-                    self.functor()
-                } else {
-                    TokenKind::Dot
-                },
+                '.' => {
+                    if self.first().is_ascii_lowercase() {
+                        self.bump();
+                        self.functor()
+                    } else {
+                        TokenKind::Dot
+                    }
+                }
                 ',' => TokenKind::Comma,
                 ';' => TokenKind::Semi,
                 '@' => TokenKind::At,
@@ -334,7 +336,7 @@ impl Cursor<'_> {
                     } else {
                         TokenKind::Wildcard
                     }
-                },
+                }
                 _ => TokenKind::Unknown,
             },
             len: self.len_consumed(),
@@ -351,7 +353,7 @@ impl Cursor<'_> {
         while let Some(ch) = self.bump() {
             if ch == '*' && self.first() == '/' {
                 self.bump();
-                return TokenKind::BlockComment { terminated: true }
+                return TokenKind::BlockComment { terminated: true };
             }
         }
         TokenKind::BlockComment { terminated: false }
@@ -411,7 +413,7 @@ impl Cursor<'_> {
                 self.bump();
                 self.eat_while(|ch| ch.is_ascii_digit());
                 kind = TokenKind::Float;
-            },
+            }
             ('e' | 'E', ch, _) if ch.is_ascii_digit() => {
                 self.bump();
                 self.bump();
