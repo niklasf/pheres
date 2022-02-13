@@ -21,6 +21,8 @@ pub enum TokenKind {
     Functor,
     /// `Foo`
     Variable,
+    /// `_`
+    Wildcard,
     /// `42e-3`
     Number,
     /// `"foo\n"`
@@ -307,6 +309,17 @@ impl Cursor<'_> {
                 'n' if self.followed_by("ot") => TokenKind::Not,
                 'd' if self.followed_by("iv") => TokenKind::Div,
                 'm' if self.followed_by("od") => TokenKind::Mod,
+                ch if ch.is_ascii_uppercase() => self.variable(),
+                ch if ch.is_ascii_lowercase() => self.functor(),
+                '_' => {
+                    self.eat_while(|ch| ch == '_');
+                    if self.first().is_ascii_uppercase() {
+                        self.bump();
+                        self.variable()
+                    } else {
+                        TokenKind::Wildcard
+                    }
+                },
                 _ => TokenKind::Unknown,
             },
             len: self.len_consumed(),
@@ -314,7 +327,7 @@ impl Cursor<'_> {
     }
 
     pub fn line_comment(&mut self) -> TokenKind {
-        self.eat_while(|c| c != '\n');
+        self.eat_while(|ch| ch != '\n');
         TokenKind::LineComment
     }
 
@@ -332,5 +345,15 @@ impl Cursor<'_> {
     pub fn whitespace(&mut self) -> TokenKind {
         self.eat_while(char::is_whitespace);
         TokenKind::Whitespace
+    }
+
+    pub fn variable(&mut self) -> TokenKind {
+        self.eat_while(|ch| ch == '_' || ch.is_ascii_alphanumeric());
+        TokenKind::Variable
+    }
+
+    pub fn functor(&mut self) -> TokenKind {
+        self.eat_while(|ch| ch == '_' || ch == '.' || ch.is_ascii_alphanumeric());
+        TokenKind::Functor
     }
 }
