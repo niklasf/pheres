@@ -1,3 +1,8 @@
+pub struct Token {
+    pub kind: TokenKind,
+    pub len: usize,
+}
+
 pub enum TokenKind {
     /// One or more whitespace characters
     Whitespace,
@@ -92,21 +97,21 @@ pub enum TokenKind {
     Or,
 
     /// `<=`
-    OpLe,
+    LtEq,
     /// `>=`
-    OpGe,
+    GtEq,
     /// `\==`
-    OpNe,
+    NotEqual,
     /// `==`
-    OpEq,
+    Equal,
     /// `=..`
-    OpDecompose,
+    Decompose,
     /// `=`
-    OpUnify,
+    Eq,
     /// `<`
-    OpLt,
+    Lt,
     /// `>`
-    OpGt,
+    Gt,
 
     /// `;`
     Semi,
