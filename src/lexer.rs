@@ -26,7 +26,7 @@ pub enum TokenKind {
     /// `42e-3`
     Number,
     /// `"foo\n"`
-    String,
+    String { terminated: bool },
 
     /// `true`
     True,
@@ -212,6 +212,7 @@ impl Cursor<'_> {
                     _ => TokenKind::Slash,
                 },
                 '#' => self.line_comment(),
+                '"' => self.string(),
                 '(' => TokenKind::OpenParen,
                 ')' => TokenKind::CloseParen,
                 '[' => TokenKind::OpenBracket,
@@ -367,5 +368,19 @@ impl Cursor<'_> {
             }
             return TokenKind::Functor;
         }
+    }
+
+    pub fn string(&mut self) -> TokenKind {
+        let mut escaped = false;
+        while let Some(ch) = self.bump() {
+            if escaped {
+                escaped = false;
+            } else if ch == '\\' {
+                escaped = true;
+            } else if ch == '"' {
+                return TokenKind::String { terminated: true };
+            }
+        }
+        TokenKind::String { terminated: false }
     }
 }
