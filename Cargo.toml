@@ -1,8 +1,12 @@
 [package]
 name = "pheres"
 version = "0.1.0"
+description = "Tools to experiment with AgentSpeak programming language"
+repository = "https://github.com/niklasf/pheres.git"
+readme = "README.md"
+license = "GPL-3.0+"
+categories = ["compilers", "parser-implementations"]
+keywords = ["agentspeak"]
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
