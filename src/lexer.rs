@@ -147,8 +147,6 @@ pub fn tokenize(input: &str) -> impl Iterator<Item = Token> + '_ {
     })
 }
 
-const EOF_CHAR: char = '\0';
-
 struct Cursor<'a> {
     initial_len: usize,
     chars: Chars<'a>,
@@ -175,20 +173,20 @@ impl Cursor<'_> {
     }
 
     fn first(&self) -> char {
-        self.chars.clone().next().unwrap_or(EOF_CHAR)
+        self.chars.clone().next().unwrap_or_default()
     }
 
     fn second(&self) -> char {
         let mut iter = self.chars.clone();
         iter.next();
-        iter.next().unwrap_or(EOF_CHAR)
+        iter.next().unwrap_or_default()
     }
 
     fn third(&self) -> char {
         let mut iter = self.chars.clone();
         iter.next();
         iter.next();
-        iter.next().unwrap_or(EOF_CHAR)
+        iter.next().unwrap_or_default()
     }
 
     fn bump(&mut self) -> Option<char> {
