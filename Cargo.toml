@@ -10,3 +10,4 @@ keywords = ["agentspeak"]
 edition = "2021"
 
 [dependencies]
+rowan = "0.15.3"
