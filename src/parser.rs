@@ -1,4 +1,5 @@
 use rowan::Language;
+
 use crate::lexer::TokenKind;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]

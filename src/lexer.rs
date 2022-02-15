@@ -1,13 +1,12 @@
-use std::iter;
-use std::str::Chars;
+use std::{iter, str::Chars};
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct Token {
     pub kind: TokenKind,
     pub len: usize,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum TokenKind {
     /// One or more whitespace characters
     Whitespace,
@@ -421,5 +420,48 @@ impl Cursor<'_> {
             (_, _, _) => (),
         }
         kind
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_tokenize() {
+        let tokens: Vec<_> = tokenize("+!plan(X).").collect();
+        assert_eq!(
+            &tokens[..],
+            &[
+                Token {
+                    kind: TokenKind::Plus,
+                    len: 1,
+                },
+                Token {
+                    kind: TokenKind::Bang,
+                    len: 1,
+                },
+                Token {
+                    kind: TokenKind::Functor,
+                    len: 4,
+                },
+                Token {
+                    kind: TokenKind::OpenParen,
+                    len: 1,
+                },
+                Token {
+                    kind: TokenKind::Variable,
+                    len: 1,
+                },
+                Token {
+                    kind: TokenKind::CloseParen,
+                    len: 1,
+                },
+                Token {
+                    kind: TokenKind::Dot,
+                    len: 1,
+                },
+            ]
+        );
     }
 }
