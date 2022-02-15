@@ -10,4 +10,5 @@ keywords = ["agentspeak"]
 edition = "2021"
 
 [dependencies]
+codespan-reporting = "0.11.1"
 rowan = "0.15.3"

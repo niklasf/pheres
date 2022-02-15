@@ -1,6 +1,7 @@
 use rowan::Language;
 
 use crate::lexer::{tokenize, TokenKind};
+use std::ops::Range;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum AgentSpeakLanguage {}
@@ -109,22 +110,24 @@ impl Language for AgentSpeakLanguage {
     }
 }
 
-struct ParserError {
-    kind: ParserErrorKind,
-    token: usize,
+#[derive(Debug)]
+pub struct ParserError {
+    pub kind: ParserErrorKind,
+    pub token_idx: usize,
 }
 
-enum ParserErrorKind {
+#[derive(Debug)]
+pub enum ParserErrorKind {
     UnterminatedBlockComment,
     UnterminatedString,
     UnexpectedToken,
 }
 
-struct LexedStr<'a> {
+pub struct LexedStr<'a> {
     text: &'a str,
     kind: Vec<SyntaxKind>,
     start: Vec<usize>,
-    errors: Vec<ParserError>,
+    pub errors: Vec<ParserError>,
 }
 
 impl LexedStr<'_> {
@@ -146,7 +149,7 @@ impl LexedStr<'_> {
                     if !terminated {
                         res.errors.push(ParserError {
                             kind: ParserErrorKind::UnterminatedBlockComment,
-                            token: res.kind.len(),
+                            token_idx: res.kind.len(),
                         });
                     }
                     SyntaxKind::BlockComment
@@ -161,7 +164,7 @@ impl LexedStr<'_> {
                     if !terminated {
                         res.errors.push(ParserError {
                             kind: ParserErrorKind::UnterminatedString,
-                            token: res.kind.len(),
+                            token_idx: res.kind.len(),
                         });
                     }
                     SyntaxKind::String
@@ -226,7 +229,7 @@ impl LexedStr<'_> {
                 TokenKind::Unknown => {
                     res.errors.push(ParserError {
                         kind: ParserErrorKind::UnexpectedToken,
-                        token: res.kind.len(),
+                        token_idx: res.kind.len(),
                     });
                     SyntaxKind::Unknown
                 }
@@ -238,7 +241,12 @@ impl LexedStr<'_> {
         }
 
         res.kind.push(SyntaxKind::Eof);
+        res.start.push(offset);
 
         res
+    }
+
+    pub fn token_range(&self, idx: usize) -> Range<usize> {
+        self.start[idx]..self.start[idx + 1]
     }
 }
