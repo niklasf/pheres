@@ -8,9 +8,89 @@ enum AgentSpeakLanguage {}
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u16)]
 enum SyntaxKind {
-    Functor = 0,
+    Whitespace,
+    LineComment,
+    BlockComment,
+
+    Functor,
+    Variable,
+    Wildcard,
+    Integer,
+    Float,
+    String,
+
+    True,
+    False,
+
+    If,
+    Else,
+    While,
+    For,
+
+    Include,
+    Begin,
+    End,
+
     OpenParen,
     CloseParen,
+    OpenBracket,
+    CloseBracket,
+    OpenBrace,
+    CloseBrace,
+
+    Arrow,
+    Define,
+    Colon,
+
+    ForkJoinAnd,
+    ForkJoinXor,
+
+    BangBang,
+    Bang,
+    Question,
+    MinusPlus,
+
+    Not,
+    Plus,
+    Minus,
+    Slash,
+    Div,
+    Mod,
+    Pow,
+    Star,
+    And,
+    Or,
+
+    LtEq,
+    GtEq,
+    NotEqual,
+    Equal,
+    Decompose,
+    Eq,
+    Lt,
+    Gt,
+
+    Semi,
+    Comma,
+    Dot,
+    At,
+
+    Unknown,
+
+    Const,
+    Literal,
+    List,
+    Rule,
+    Goal,
+    Formula,
+    UnaryOp,
+    BinaryOp,
+    Plan,
+    Event,
+    Body,
+    WhileLoop,
+    ForLoop,
+    IfThenElse,
     Root,
 }
 
