@@ -98,6 +98,7 @@ impl Language for AgentSpeakLanguage {
     type Kind = SyntaxKind;
 
     fn kind_from_raw(raw: rowan::SyntaxKind) -> Self::Kind {
+        // SAFETY: Enum is #[repr(u16)] with Root being the last variant.
         assert!(raw.0 <= SyntaxKind::Root as u16);
         unsafe { std::mem::transmute::<u16, SyntaxKind>(raw.0) }
     }
