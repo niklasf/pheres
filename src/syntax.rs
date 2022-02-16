@@ -83,6 +83,8 @@ pub enum SyntaxKind {
 
     Const,
     Literal,
+    LiteralTerms,
+    LiteralAnnotations,
     List,
     Belief,
     Rule,

@@ -87,39 +87,47 @@ impl Parser<'_> {
 
     fn parse_rule_or_belief(&mut self) {
         let checkpoint = self.builder.checkpoint();
-
-        if let Err(err) = self.parse_literal() {
-            self.errors.push(err);
-            self.eat_while(|t| t != SyntaxKind::Dot);
-            self.bump();
-            self.builder.start_node_at(checkpoint, SyntaxKind::Error.into());
-            self.builder.finish_node();
-            return;
-        }
+        self.parse_literal();
+        self.builder.start_node_at(checkpoint, SyntaxKind::Belief.into());
+        self.builder.finish_node();
     }
 
-    fn parse_literal(&mut self) -> Result<(), ParserError> {
+    fn parse_literal(&mut self) {
         self.builder.start_node(SyntaxKind::Literal.into());
 
-        match self.current() {
-            Some(SyntaxKind::Functor) => {
-                self.bump();
-            },
-            Some(token) => {
-                self.bump();
-                self.builder.finish_node();
-                return Err(ParserError(format!("expected functor, got {:?}", token)));
-            }
-            None => {
-                self.builder.finish_node();
-                return Err(ParserError::unexpected_eof());
-            }
-        }
+        assert!(self.current() == Some(SyntaxKind::Functor));
+        self.bump();
 
         if self.current() == Some(SyntaxKind::OpenParen) {
+            self.bump();
+            self.builder.start_node(SyntaxKind::LiteralTerms.into());
+            self.builder.finish_node();
         }
 
         self.builder.finish_node();
-        Ok(())
+    }
+
+    fn parse_term(&mut self) {
+        self.parse_atom();
+    }
+
+    fn parse_atom(&mut self) {
+        match self.current() {
+            Some(SyntaxKind::Variable | SyntaxKind::Integer | SyntaxKind::Float | SyntaxKind::True | SyntaxKind::False | SyntaxKind::String) => self.bump(),
+            Some(SyntaxKind::Functor) => self.parse_literal(),
+            Some(SyntaxKind::OpenParen) => {
+                todo!()
+            }
+            Some(SyntaxKind::OpenBracket) => {
+                todo!()
+            }
+            Some(token) => {
+                self.bump();
+                self.errors.push(ParserError(format!("expected atom, got {:?}", token)));
+            },
+            None => {
+                self.errors.push(ParserError::unexpected_eof());
+            }
+        }
     }
 }
