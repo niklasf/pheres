@@ -1,4 +1,4 @@
-use std::{fmt, ops::Range};
+use std::{fmt, ops::{Range, MulAssign}};
 
 use rowan::Language;
 
@@ -103,9 +103,9 @@ pub enum SyntaxKind {
     Disjunction,
     Negation,
     Comparison,
-    ArithmeticExpression,
-    ProductExpression,
-    FactorExpression,
+    AdditiveExpression,
+    MultiplicativeExpression,
+    UnaryExpression,
     PowerExpression,
     Atom,
     List,
@@ -129,6 +129,44 @@ impl SyntaxKind {
             _ => return None,
         })
     }
+
+    pub fn additive_operator(self) -> Option<AdditiveOperator> {
+        Some(match self {
+            SyntaxKind::Plus => AdditiveOperator::Add,
+            SyntaxKind::Minus => AdditiveOperator::Sub,
+            _ => return None,
+        })
+    }
+
+    pub fn multiplicative_operator(self) -> Option<MultiplicativeOperator> {
+        Some(match self {
+            SyntaxKind::Star => MultiplicativeOperator::Mul,
+            SyntaxKind::Slash => MultiplicativeOperator::Div,
+            SyntaxKind::Div => MultiplicativeOperator::FloorDiv,
+            SyntaxKind::Mod => MultiplicativeOperator::Mod,
+            _ => return None,
+        })
+    }
+
+    pub fn unary_operator(self) -> Option<UnaryOperator> {
+        Some(match self {
+            SyntaxKind::Plus => UnaryOperator::Pos,
+            SyntaxKind::Minus => UnaryOperator::Neg,
+            _ => return None,
+        })
+    }
+
+    pub fn formula_type(self) -> Option<FormulaType> {
+        Some(match self {
+            SyntaxKind::BangBang => FormulaType::AchieveLater,
+            SyntaxKind::Bang => FormulaType::Achieve,
+            SyntaxKind::Question => FormulaType::Test,
+            SyntaxKind::MinusPlus => FormulaType::Replace,
+            SyntaxKind::Plus => FormulaType::Add,
+            SyntaxKind::Minus => FormulaType::Remove,
+            _ => return None,
+        })
+    }
 }
 
 pub enum ComparisonOperator {
@@ -140,6 +178,33 @@ pub enum ComparisonOperator {
     Eq,
     Lt,
     Gt,
+}
+
+pub enum FormulaType {
+    AchieveLater,
+    Achieve,
+    Test,
+    Replace,
+    Remove,
+    Add,
+    Term,
+}
+
+pub enum AdditiveOperator {
+    Add,
+    Sub,
+}
+
+pub enum MultiplicativeOperator {
+    Mul,
+    Div,
+    FloorDiv,
+    Mod,
+}
+
+pub enum UnaryOperator {
+    Pos,
+    Neg,
 }
 
 impl From<SyntaxKind> for rowan::SyntaxKind {

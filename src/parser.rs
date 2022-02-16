@@ -209,15 +209,8 @@ impl Parser<'_> {
     fn parse_formula(&mut self) {
         self.builder.start_node(SyntaxKind::Formula.into());
         match self.current() {
-            Some(
-                SyntaxKind::BangBang
-                | SyntaxKind::Bang
-                | SyntaxKind::Question
-                | SyntaxKind::MinusPlus
-                | SyntaxKind::Plus
-                | SyntaxKind::Minus,
-            ) => self.bump(),
-            Some(SyntaxKind::While | SyntaxKind::If | SyntaxKind::For) => todo!(),
+            Some(token) if token.formula_type().is_some() => self.bump(),
+            Some(SyntaxKind::While | SyntaxKind::If | SyntaxKind::For) => todo!("control flow"),
             Some(_) => (),
             None => self.unexpected_eof = true,
         }
@@ -326,16 +319,42 @@ impl Parser<'_> {
     }
 
     fn parse_comparison(&mut self) {
-        self.builder.start_node(SyntaxKind::ArithmeticExpression.into());
-        self.parse_arithmetic_expression();
-        if self.current().map(|t| t.comparison_operator()).is_some() {
+        self.builder.start_node(SyntaxKind::Comparison.into());
+        self.parse_additive_expression();
+        if self.current().and_then(|t| t.comparison_operator()).is_some() {
             self.bump();
-            self.parse_arithmetic_expression();
+            self.parse_additive_expression();
         }
         self.builder.finish_node();
     }
 
-    fn parse_arithmetic_expression(&mut self) {
+    fn parse_additive_expression(&mut self) {
+        self.builder.start_node(SyntaxKind::AdditiveExpression.into());
+        self.parse_multiplicative_expression();
+        while self.current().and_then(|t| t.multiplicative_operator()).is_some() {
+            self.bump();
+            self.parse_multiplicative_expression();
+        }
+        self.builder.finish_node();
+    }
+
+    fn parse_multiplicative_expression(&mut self) {
+        self.builder.start_node(SyntaxKind::MultiplicativeExpression.into());
+        self.parse_unary_expression();
+        while self.current().and_then(|t| t.unary_operator()).is_some() {
+            self.bump();
+            self.parse_unary_expression();
+        }
+        self.builder.finish_node();
+    }
+
+    fn parse_unary_expression(&mut self) {
+        self.builder.start_node(SyntaxKind::UnaryExpression.into());
+        if self.current().and_then(|t| t.unary_operator()).is_some() {
+            self.bump();
+        }
+        self.parse_atom(); // XXX
+        self.builder.finish_node();
     }
 
     fn parse_atom(&mut self) {
