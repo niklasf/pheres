@@ -105,8 +105,6 @@ impl Parser<'_> {
             self.push_error("expected '.' after rule or belief".to_owned());
         }
 
-        self.builder
-            .start_node_at(checkpoint, SyntaxKind::Belief.into());
         self.builder.finish_node();
     }
 
@@ -119,6 +117,22 @@ impl Parser<'_> {
         if self.current() == Some(SyntaxKind::OpenParen) {
             self.bump();
             self.builder.start_node(SyntaxKind::LiteralTerms.into());
+
+            self.parse_term();
+            while let Some(SyntaxKind::Comma) = self.current() {
+                self.bump();
+                self.parse_term();
+            }
+
+            match self.current() {
+                Some(SyntaxKind::CloseParen) => self.bump(),
+                Some(token) => {
+                    self.push_error(format!("expected ')' to close literal, got {:?}", token));
+                    self.bump();
+                }
+                None => self.push_error("expected ')', got end of file".to_owned()),
+            }
+
             self.builder.finish_node();
         }
 
@@ -151,7 +165,7 @@ impl Parser<'_> {
                 self.push_error(format!("expected atom, got {:?}", token));
             }
             None => {
-                self.push_error("unexpected end of file".to_owned());
+                self.push_error("expected atom, got end of file".to_owned());
             }
         }
     }

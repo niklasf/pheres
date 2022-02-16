@@ -150,6 +150,7 @@ impl fmt::Display for SyntaxErrorKind {
     }
 }
 
+#[derive(Debug)]
 pub struct LexedStr<'a> {
     text: &'a str,
     kind: Vec<SyntaxKind>,
@@ -268,6 +269,7 @@ impl LexedStr<'_> {
         }
 
         res.kind.push(SyntaxKind::Eof);
+        res.start.push(offset);
         res.start.push(offset);
 
         res
