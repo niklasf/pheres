@@ -89,6 +89,9 @@ pub enum SyntaxKind {
 
     Belief,
     Rule,
+    Plan,
+    PlanAnnotation,
+    PlanContext,
     Literal,
     LiteralTerms,
     LiteralAnnotations,
@@ -99,7 +102,6 @@ pub enum SyntaxKind {
     Const,
     UnaryOp,
     BinaryOp,
-    Plan,
     Event,
     Body,
     WhileLoop,

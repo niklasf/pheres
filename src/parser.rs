@@ -65,6 +65,7 @@ impl Parser<'_> {
             match token {
                 SyntaxKind::Functor => self.parse_rule_or_belief(),
                 SyntaxKind::Bang => self.parse_initial_goal(),
+                SyntaxKind::At | SyntaxKind::Plus | SyntaxKind::Minus => self.parse_plan(),
                 _ => self.recover(format!("unexpected token {:?}", token), |t| t == SyntaxKind::Dot, |_| false),
             }
         }
@@ -129,15 +130,61 @@ impl Parser<'_> {
         self.builder.finish_node();
     }
 
+    fn parse_plan(&mut self) {
+        self.builder.start_node(SyntaxKind::Plan.into());
+
+        while self.current() == Some(SyntaxKind::At) {
+            self.builder.start_node(SyntaxKind::PlanAnnotation.into());
+            self.bump();
+            self.parse_literal();
+            self.builder.finish_node();
+        }
+
+        match self.current() {
+            Some(SyntaxKind::Plus | SyntaxKind::Minus) => self.bump(),
+            _ => self.push_error("expected '+' or '-' for plan trigger"),
+        }
+
+        if let Some(SyntaxKind::Bang) = self.current() {
+            self.bump();
+        }
+
+        self.parse_literal();
+
+        if self.current() == Some(SyntaxKind::Colon) {
+            self.bump();
+            self.builder.start_node(SyntaxKind::PlanContext.into());
+            self.parse_term();
+            self.builder.finish_node();
+        }
+
+        if self.current() == Some(SyntaxKind::Arrow) {
+            self.bump();
+            self.builder.start_node(SyntaxKind::Body.into());
+            self.bump();
+            self.builder.finish_node();
+        }
+
+        self.builder.finish_node();
+    }
+
     fn parse_literal(&mut self) {
         self.builder.start_node(SyntaxKind::Literal.into());
 
-        assert!(self.current() == Some(SyntaxKind::Functor));
-        self.bump();
+        match self.current() {
+            Some(SyntaxKind::Functor) => self.bump(),
+            Some(token) => {
+                self.recover(format!("expected literal, got {:?}", token), |_| false, |t| t == SyntaxKind::Dot || t == SyntaxKind::Semi);
+                self.builder.finish_node();
+                return;
+            }
+            None =>
+                self.push_error("expected literal, got end of file"),
+        }
 
         if self.current() == Some(SyntaxKind::OpenParen) {
-            self.bump();
             self.builder.start_node(SyntaxKind::LiteralTerms.into());
+            self.bump();
 
             self.parse_term();
             while let Some(SyntaxKind::Comma) = self.current() {
@@ -149,7 +196,6 @@ impl Parser<'_> {
                 Some(SyntaxKind::CloseParen) => self.bump(),
                 Some(token) => {
                     self.recover(format!("expected ')' to close literal, got {:?}", token), |t| t == SyntaxKind::CloseParen, |t| t == SyntaxKind::Dot || t == SyntaxKind::Semi);
-                    self.bump();
                 }
                 None => self.push_error("expected ')', got end of file"),
             }
@@ -158,8 +204,8 @@ impl Parser<'_> {
         }
 
         if self.current() == Some(SyntaxKind::OpenBracket) {
-            self.bump();
             self.builder.start_node(SyntaxKind::LiteralAnnotations.into());
+            self.bump();
 
             if self.current() != Some(SyntaxKind::CloseBracket) {
                 self.parse_term();
