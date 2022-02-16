@@ -127,10 +127,33 @@ impl Parser<'_> {
             match self.current() {
                 Some(SyntaxKind::CloseParen) => self.bump(),
                 Some(token) => {
-                    self.recover(format!("expected ')' to close literal, got {:?}", token), |t| t == SyntaxKind::Dot, |t| t == SyntaxKind::Dot || t == SyntaxKind::Semi);
+                    self.recover(format!("expected ')' to close literal, got {:?}", token), |t| t == SyntaxKind::CloseParen, |t| t == SyntaxKind::Dot || t == SyntaxKind::Semi);
                     self.bump();
                 }
                 None => self.push_error("expected ')', got end of file".to_owned()),
+            }
+
+            self.builder.finish_node();
+        }
+
+        if self.current() == Some(SyntaxKind::OpenBracket) {
+            self.bump();
+            self.builder.start_node(SyntaxKind::LiteralAnnotations.into());
+
+            if self.current() != Some(SyntaxKind::CloseBracket) {
+                self.parse_term();
+                while let Some(SyntaxKind::Comma) = self.current() {
+                    self.bump();
+                    self.parse_term();
+                }
+
+                match self.current() {
+                    Some(SyntaxKind::CloseBracket) => self.bump(),
+                    Some(token) => {
+                        self.recover(format!("expected ']' to close literal annotation, got {:?}", token), |t| t == SyntaxKind::CloseBracket, |t| t == SyntaxKind::Dot || t == SyntaxKind::Semi);
+                    }
+                    None => self.push_error("expected ']', got end of file".to_owned()),
+                }
             }
 
             self.builder.finish_node();
