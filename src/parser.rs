@@ -66,7 +66,11 @@ impl Parser<'_> {
                 SyntaxKind::Functor => self.parse_rule_or_belief(),
                 SyntaxKind::Bang => self.parse_initial_goal(),
                 SyntaxKind::At | SyntaxKind::Plus | SyntaxKind::Minus => self.parse_plan(),
-                _ => self.recover(format!("unexpected token {:?}", token), |t| t == SyntaxKind::Dot, |_| false),
+                _ => self.recover(
+                    format!("unexpected token {:?}", token),
+                    |t| t == SyntaxKind::Dot,
+                    |_| false,
+                ),
             }
         }
 
@@ -94,7 +98,11 @@ impl Parser<'_> {
         if self.current() == Some(SyntaxKind::Dot) {
             self.bump();
         } else {
-            self.recover("expected '.' after rule or belief", |t| t == SyntaxKind::Dot, |_| false);
+            self.recover(
+                "expected '.' after rule or belief",
+                |t| t == SyntaxKind::Dot,
+                |_| false,
+            );
         }
 
         self.builder.finish_node();
@@ -109,7 +117,11 @@ impl Parser<'_> {
         match self.current() {
             Some(SyntaxKind::Functor) => self.parse_literal(),
             Some(token) => {
-                self.recover(format!("expected functor after '!', got {:?}", token), |t| t == SyntaxKind::Dot, |_| false);
+                self.recover(
+                    format!("expected functor after '!', got {:?}", token),
+                    |t| t == SyntaxKind::Dot,
+                    |_| false,
+                );
                 self.builder.finish_node();
                 return;
             }
@@ -122,8 +134,11 @@ impl Parser<'_> {
 
         match self.current() {
             Some(SyntaxKind::Dot) => self.bump(),
-            Some(token) =>
-                self.recover(format!("expected '.' after initial goal, got {:?}", token), |t| t == SyntaxKind::Dot, |_| false),
+            Some(token) => self.recover(
+                format!("expected '.' after initial goal, got {:?}", token),
+                |t| t == SyntaxKind::Dot,
+                |_| false,
+            ),
             None => self.push_error("expected '.' after initial goal, got end of file"),
         }
 
@@ -169,8 +184,11 @@ impl Parser<'_> {
                         self.bump();
                         break;
                     }
-                    Some(token) =>
-                        self.recover(format!("expected ';' or '.', got {:?}", token), |_| false, |t| t == SyntaxKind::Semi || t == SyntaxKind::Dot),
+                    Some(token) => self.recover(
+                        format!("expected ';' or '.', got {:?}", token),
+                        |_| false,
+                        |t| t == SyntaxKind::Semi || t == SyntaxKind::Dot,
+                    ),
                     None => {
                         self.push_error("expected formula in plan body, got end of file");
                         break;
@@ -186,7 +204,14 @@ impl Parser<'_> {
     fn parse_formula(&mut self) {
         self.builder.start_node(SyntaxKind::Formula.into());
         match self.current() {
-            Some(SyntaxKind::BangBang | SyntaxKind::Bang | SyntaxKind::Question | SyntaxKind::MinusPlus | SyntaxKind::Plus | SyntaxKind::Minus) => self.bump(),
+            Some(
+                SyntaxKind::BangBang
+                | SyntaxKind::Bang
+                | SyntaxKind::Question
+                | SyntaxKind::MinusPlus
+                | SyntaxKind::Plus
+                | SyntaxKind::Minus,
+            ) => self.bump(),
             Some(SyntaxKind::While | SyntaxKind::If | SyntaxKind::For) => todo!(),
             Some(_) => (),
             None => self.push_error("expected formula, got end of file"),
@@ -201,12 +226,15 @@ impl Parser<'_> {
         match self.current() {
             Some(SyntaxKind::Functor) => self.bump(),
             Some(token) => {
-                self.recover(format!("expected literal, got {:?}", token), |_| false, |t| t == SyntaxKind::Dot || t == SyntaxKind::Semi);
+                self.recover(
+                    format!("expected literal, got {:?}", token),
+                    |_| false,
+                    |t| t == SyntaxKind::Dot || t == SyntaxKind::Semi,
+                );
                 self.builder.finish_node();
                 return;
             }
-            None =>
-                self.push_error("expected literal, got end of file"),
+            None => self.push_error("expected literal, got end of file"),
         }
 
         if self.current() == Some(SyntaxKind::OpenParen) {
@@ -222,7 +250,11 @@ impl Parser<'_> {
             match self.current() {
                 Some(SyntaxKind::CloseParen) => self.bump(),
                 Some(token) => {
-                    self.recover(format!("expected ')' to close literal, got {:?}", token), |t| t == SyntaxKind::CloseParen, |t| t == SyntaxKind::Dot || t == SyntaxKind::Semi);
+                    self.recover(
+                        format!("expected ')' to close literal, got {:?}", token),
+                        |t| t == SyntaxKind::CloseParen,
+                        |t| t == SyntaxKind::Dot || t == SyntaxKind::Semi,
+                    );
                 }
                 None => self.push_error("expected ')', got end of file"),
             }
@@ -231,7 +263,8 @@ impl Parser<'_> {
         }
 
         if self.current() == Some(SyntaxKind::OpenBracket) {
-            self.builder.start_node(SyntaxKind::LiteralAnnotations.into());
+            self.builder
+                .start_node(SyntaxKind::LiteralAnnotations.into());
             self.bump();
 
             if self.current() != Some(SyntaxKind::CloseBracket) {
@@ -244,7 +277,11 @@ impl Parser<'_> {
                 match self.current() {
                     Some(SyntaxKind::CloseBracket) => self.bump(),
                     Some(token) => {
-                        self.recover(format!("expected ']' to close literal annotation, got {:?}", token), |t| t == SyntaxKind::CloseBracket, |t| t == SyntaxKind::Dot || t == SyntaxKind::Semi);
+                        self.recover(
+                            format!("expected ']' to close literal annotation, got {:?}", token),
+                            |t| t == SyntaxKind::CloseBracket,
+                            |t| t == SyntaxKind::Dot || t == SyntaxKind::Semi,
+                        );
                     }
                     None => self.push_error("expected ']', got end of file"),
                 }
@@ -287,7 +324,12 @@ impl Parser<'_> {
         }
     }
 
-    fn recover(&mut self, message: impl Into<String>, mut until_inclusive: impl FnMut(SyntaxKind) -> bool, mut until_exclusive: impl FnMut(SyntaxKind) -> bool) {
+    fn recover(
+        &mut self,
+        message: impl Into<String>,
+        mut until_inclusive: impl FnMut(SyntaxKind) -> bool,
+        mut until_exclusive: impl FnMut(SyntaxKind) -> bool,
+    ) {
         self.push_error(message);
         self.builder.start_node(SyntaxKind::Error.into());
         while let Some(token) = self.current() {
