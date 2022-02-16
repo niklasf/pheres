@@ -6,9 +6,13 @@ use codespan_reporting::{
 };
 
 mod lexer;
+mod parser;
 mod syntax;
 
-use crate::syntax::{LexedStr, SyntaxErrorKind};
+use crate::{
+    parser::parse,
+    syntax::{LexedStr, SyntaxErrorKind},
+};
 
 fn main() {
     let mut files = SimpleFiles::new();
@@ -40,4 +44,6 @@ fn main() {
         )
         .unwrap();
     }
+
+    let _parsed = dbg!(parse(lexed));
 }

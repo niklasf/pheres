@@ -5,11 +5,11 @@ use rowan::Language;
 use crate::lexer::{tokenize, TokenKind};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-enum AgentSpeakLanguage {}
+pub enum AgentSpeakLanguage {}
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u16)]
-enum SyntaxKind {
+pub enum SyntaxKind {
     Whitespace,
     LineComment,
     BlockComment,
@@ -97,6 +97,12 @@ enum SyntaxKind {
     Root,
 }
 
+impl From<SyntaxKind> for rowan::SyntaxKind {
+    fn from(kind: SyntaxKind) -> Self {
+        Self(kind as u16)
+    }
+}
+
 impl Language for AgentSpeakLanguage {
     type Kind = SyntaxKind;
 
@@ -107,7 +113,7 @@ impl Language for AgentSpeakLanguage {
     }
 
     fn kind_to_raw(kind: Self::Kind) -> rowan::SyntaxKind {
-        rowan::SyntaxKind(kind as u16)
+        kind.into()
     }
 }
 
@@ -247,7 +253,41 @@ impl LexedStr<'_> {
         res
     }
 
+    pub fn len(&self) -> usize {
+        self.kind.len() - 1
+    }
+
     pub fn token_range(&self, idx: usize) -> Range<usize> {
         self.start[idx]..self.start[idx + 1]
+    }
+
+    pub fn iter(&self) -> LexedStrIter<'_> {
+        LexedStrIter {
+            lexed: self,
+            token_idx: 0,
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct LexedStrIter<'a> {
+    lexed: &'a LexedStr<'a>,
+    token_idx: usize,
+}
+
+impl<'a> Iterator for LexedStrIter<'a> {
+    type Item = (SyntaxKind, &'a str);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.token_idx < self.lexed.len() {
+            let res = Some((
+                self.lexed.kind[self.token_idx],
+                &self.lexed.text[self.lexed.token_range(self.token_idx)],
+            ));
+            self.token_idx += 1;
+            res
+        } else {
+            None
+        }
     }
 }
