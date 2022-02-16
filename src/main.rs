@@ -4,6 +4,7 @@ use codespan_reporting::{
     term,
     term::termcolor::{ColorChoice, StandardStream},
 };
+use rowan::NodeOrToken;
 
 mod lexer;
 mod parser;
@@ -11,8 +12,22 @@ mod syntax;
 
 use crate::{
     parser::parse,
-    syntax::{LexedStr, SyntaxErrorKind},
+    syntax::{LexedStr, SyntaxErrorKind, SyntaxElement, SyntaxKind, SyntaxNode},
 };
+
+fn print(level: usize, element: SyntaxElement) {
+    let kind: SyntaxKind = element.kind().into();
+    print!("{:indent$}", "", indent = level * 2);
+    match element {
+        NodeOrToken::Node(node) => {
+            println!("- {:?}", kind);
+            for child in node.children_with_tokens() {
+                print(level + 1, child);
+            }
+        }
+        NodeOrToken::Token(token) => println!("- {:?} {:?}", token.text(), kind),
+    }
+}
 
 fn main() {
     let mut files = SimpleFiles::new();
@@ -42,5 +57,6 @@ fn main() {
     }
 
     let parsed = parse(lexed);
-    println!("{}", parsed.green_node);
+    //println!("{}", parsed.green_node);
+    print(0, SyntaxNode::new_root(parsed.green_node).into());
 }

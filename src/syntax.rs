@@ -8,6 +8,10 @@ use crate::lexer::{tokenize, TokenKind};
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum AgentSpeakLanguage {}
 
+pub type SyntaxNode = rowan::SyntaxNode<AgentSpeakLanguage>;
+pub type SyntaxToken = rowan::SyntaxToken<AgentSpeakLanguage>;
+pub type SyntaxElement = rowan::NodeOrToken<SyntaxNode, SyntaxToken>;
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u16)]
 pub enum SyntaxKind {
