@@ -78,12 +78,13 @@ pub enum SyntaxKind {
     Dot,
     At,
 
-    Unknown,
+    Error,
     Eof,
 
     Const,
     Literal,
     List,
+    Belief,
     Rule,
     Goal,
     Formula,
@@ -249,7 +250,7 @@ impl LexedStr<'_> {
                         kind: SyntaxErrorKind::UnexpectedToken,
                         token_idx: res.kind.len(),
                     });
-                    SyntaxKind::Unknown
+                    SyntaxKind::Error
                 }
             };
 

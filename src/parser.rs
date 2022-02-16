@@ -1,3 +1,4 @@
+use std::fmt;
 use std::iter::Peekable;
 use rowan::{GreenNode, GreenNodeBuilder};
 
@@ -10,8 +11,18 @@ pub struct Parsed {
 }
 
 #[derive(Debug)]
-pub enum ParserError {
-    ExpectedFunctor { },
+pub struct ParserError(String);
+
+impl ParserError {
+    fn unexpected_eof() -> ParserError {
+        ParserError("unexpected end of file".to_owned())
+    }
+}
+
+impl fmt::Display for ParserError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.0)
+    }
 }
 
 struct Parser<'a> {
@@ -46,6 +57,16 @@ impl Parser<'_> {
         self.tokens.peek().map(|(token, _)| *token)
     }
 
+    fn eat_while(&mut self, mut predicate: impl FnMut(SyntaxKind) -> bool) {
+        while let Some(token) = self.current() {
+            if predicate(token) {
+                self.bump();
+            } else {
+                break;
+            }
+        }
+    }
+
     fn parse(mut self) -> Parsed {
         self.builder.start_node(SyntaxKind::Root.into());
 
@@ -66,15 +87,39 @@ impl Parser<'_> {
 
     fn parse_rule_or_belief(&mut self) {
         let checkpoint = self.builder.checkpoint();
-        //self.builder.start_node(SyntaxKind::RuleOrBelief);
-        //self.bump();
-        //self.builder.finish_node();
-        self.parse_literal();
+
+        if let Err(err) = self.parse_literal() {
+            self.errors.push(err);
+            self.eat_while(|t| t != SyntaxKind::Dot);
+            self.bump();
+            self.builder.start_node_at(checkpoint, SyntaxKind::Error.into());
+            self.builder.finish_node();
+            return;
+        }
     }
 
-    fn parse_literal(&mut self) {
+    fn parse_literal(&mut self) -> Result<(), ParserError> {
         self.builder.start_node(SyntaxKind::Literal.into());
 
+        match self.current() {
+            Some(SyntaxKind::Functor) => {
+                self.bump();
+            },
+            Some(token) => {
+                self.bump();
+                self.builder.finish_node();
+                return Err(ParserError(format!("expected functor, got {:?}", token)));
+            }
+            None => {
+                self.builder.finish_node();
+                return Err(ParserError::unexpected_eof());
+            }
+        }
+
+        if self.current() == Some(SyntaxKind::OpenParen) {
+        }
+
         self.builder.finish_node();
+        Ok(())
     }
 }
