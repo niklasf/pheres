@@ -164,7 +164,7 @@ impl Parser<'_> {
             loop {
                 self.parse_formula();
                 match self.current() {
-                    Some(SyntaxKind::Comma) => self.bump(),
+                    Some(SyntaxKind::Semi) => self.bump(),
                     Some(SyntaxKind::Dot) => {
                         self.bump();
                         break;
@@ -188,7 +188,7 @@ impl Parser<'_> {
         match self.current() {
             Some(SyntaxKind::BangBang | SyntaxKind::Bang | SyntaxKind::Question | SyntaxKind::MinusPlus | SyntaxKind::Plus | SyntaxKind::Minus) => self.bump(),
             Some(SyntaxKind::While | SyntaxKind::If | SyntaxKind::For) => todo!(),
-            Some(token) => self.recover(format!("expected formula, got {:?}", token), |_| false, |t| t == SyntaxKind::Semi || t == SyntaxKind::Dot),
+            Some(_) => (),
             None => self.push_error("expected formula, got end of file"),
         }
         self.parse_term();
