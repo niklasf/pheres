@@ -1,5 +1,5 @@
 use codespan_reporting::{
-    diagnostic::{self, Diagnostic, Label},
+    diagnostic::{Diagnostic, Label},
     files::SimpleFiles,
     term,
     term::termcolor::{ColorChoice, StandardStream},
@@ -12,7 +12,7 @@ mod syntax;
 
 use crate::{
     parser::parse,
-    syntax::{LexedStr, SyntaxElement, SyntaxErrorKind, SyntaxKind, SyntaxNode},
+    syntax::{LexedStr, SyntaxElement, SyntaxKind, SyntaxNode},
 };
 
 fn print(level: usize, element: SyntaxElement) {

@@ -6,3 +6,7 @@ foo(bar, baz).
  * world */
 
 foo[stop  .
+
+!initial_goal.
+
++!initial_goal <- .print("Hello world

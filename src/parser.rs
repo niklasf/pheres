@@ -58,23 +58,14 @@ impl Parser<'_> {
         self.tokens.peek().map(|(token, _)| token)
     }
 
-    fn eat_while(&mut self, mut predicate: impl FnMut(SyntaxKind) -> bool) {
-        while let Some(token) = self.current() {
-            if predicate(token) {
-                self.bump();
-            } else {
-                break;
-            }
-        }
-    }
-
     fn parse(mut self) -> Parsed {
         self.builder.start_node(SyntaxKind::Root.into());
 
         while let Some(token) = self.current() {
             match token {
                 SyntaxKind::Functor => self.parse_rule_or_belief(),
-                _ => self.bump(),
+                SyntaxKind::Bang => self.parse_initial_goal(),
+                _ => self.recover(format!("unexpected token {:?}", token), |t| t == SyntaxKind::Dot, |_| false),
             }
         }
 
@@ -108,6 +99,36 @@ impl Parser<'_> {
         self.builder.finish_node();
     }
 
+    fn parse_initial_goal(&mut self) {
+        self.builder.start_node(SyntaxKind::InitialGoal.into());
+
+        assert!(self.current() == Some(SyntaxKind::Bang));
+        self.bump();
+
+        match self.current() {
+            Some(SyntaxKind::Functor) => self.parse_literal(),
+            Some(token) => {
+                self.recover(format!("expected functor after '!', got {:?}", token), |t| t == SyntaxKind::Dot, |_| false);
+                self.builder.finish_node();
+                return;
+            }
+            None => {
+                self.push_error("unexpected end of file after '!'");
+                self.builder.finish_node();
+                return;
+            }
+        }
+
+        match self.current() {
+            Some(SyntaxKind::Dot) => self.bump(),
+            Some(token) =>
+                self.recover(format!("expected '.' after initial goal, got {:?}", token), |t| t == SyntaxKind::Dot, |_| false),
+            None => self.push_error("expected '.' after initial goal, got end of file"),
+        }
+
+        self.builder.finish_node();
+    }
+
     fn parse_literal(&mut self) {
         self.builder.start_node(SyntaxKind::Literal.into());
 
@@ -130,7 +151,7 @@ impl Parser<'_> {
                     self.recover(format!("expected ')' to close literal, got {:?}", token), |t| t == SyntaxKind::CloseParen, |t| t == SyntaxKind::Dot || t == SyntaxKind::Semi);
                     self.bump();
                 }
-                None => self.push_error("expected ')', got end of file".to_owned()),
+                None => self.push_error("expected ')', got end of file"),
             }
 
             self.builder.finish_node();
@@ -152,7 +173,7 @@ impl Parser<'_> {
                     Some(token) => {
                         self.recover(format!("expected ']' to close literal annotation, got {:?}", token), |t| t == SyntaxKind::CloseBracket, |t| t == SyntaxKind::Dot || t == SyntaxKind::Semi);
                     }
-                    None => self.push_error("expected ']', got end of file".to_owned()),
+                    None => self.push_error("expected ']', got end of file"),
                 }
             }
 
@@ -188,13 +209,13 @@ impl Parser<'_> {
                 self.push_error(format!("expected atom, got {:?}", token));
             }
             None => {
-                self.push_error("expected atom, got end of file".to_owned());
+                self.push_error("expected atom, got end of file");
             }
         }
     }
 
     fn recover(&mut self, message: impl Into<String>, mut until_inclusive: impl FnMut(SyntaxKind) -> bool, mut until_exclusive: impl FnMut(SyntaxKind) -> bool) {
-        self.push_error(message.into());
+        self.push_error(message);
         self.builder.start_node(SyntaxKind::Error.into());
         while let Some(token) = self.current() {
             if until_exclusive(token) {
@@ -208,9 +229,9 @@ impl Parser<'_> {
         self.builder.finish_node();
     }
 
-    fn push_error(&mut self, message: String) {
+    fn push_error(&mut self, message: impl Into<String>) {
         self.errors.push(ParserError {
-            message,
+            message: message.into(),
             token_idx: self.tokens.current_token_idx(),
         });
     }
