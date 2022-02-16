@@ -1,12 +1,10 @@
-h.
+disc(small, 1).
+disc(med, 2).
+disc(large, 3).
 
-foo(bar, baz).
+on(large, 0, table).
+on(med, 0, large).
+on(small, 1, table).
 
-/* hello
- * world */
-
-foo[stop  .
-
-!initial_goal.
-
-+!initial_goal <- .print("Hello world"; .fail;
++!sort : on(Disc, _, table) <-
+  .print(Disc).

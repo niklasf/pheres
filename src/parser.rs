@@ -305,6 +305,7 @@ impl Parser<'_> {
         match self.current() {
             Some(
                 SyntaxKind::Variable
+                | SyntaxKind::Wildcard
                 | SyntaxKind::Integer
                 | SyntaxKind::Float
                 | SyntaxKind::True
@@ -319,8 +320,11 @@ impl Parser<'_> {
                 todo!()
             }
             Some(token) => {
-                self.bump();
-                self.push_error(format!("expected atom, got {:?}", token));
+                self.recover(
+                    format!("expected atom, got {:?}", token),
+                    |_| false,
+                    |t| t == SyntaxKind::Semi || t == SyntaxKind::Dot || t == SyntaxKind::CloseParen,
+                );
             }
             None => self.unexpected_eof = true,
         }
