@@ -404,9 +404,7 @@ impl Parser<'_> {
                 | SyntaxKind::String,
             ) => self.bump(),
             Some(SyntaxKind::Functor) => self.parse_literal(),
-            Some(SyntaxKind::OpenBracket) => {
-                todo!("lists not yet implemented")
-            }
+            Some(SyntaxKind::OpenBracket) => self.parse_list(),
             Some(SyntaxKind::OpenParen) => {
                 self.bump();
                 self.parse_term();
@@ -431,6 +429,42 @@ impl Parser<'_> {
             }
             None => self.unexpected_eof = true,
         }
+    }
+
+    fn parse_list(&mut self) {
+        self.builder.start_node(SyntaxKind::List.into());
+        match self.current() {
+            Some(SyntaxKind::OpenBracket) => self.bump(),
+            Some(token) => {
+                self.recover(format!("expected '[' for list, got {:?}", token), |_| false, |t| t == SyntaxKind::Semi || t == SyntaxKind::Dot);
+                self.builder.finish_node();
+                return;
+            }
+            None => self.unexpected_eof = true,
+        }
+        loop {
+            if self.current() == Some(SyntaxKind::CloseBracket) {
+                self.bump();
+                break;
+            }
+
+            self.parse_conjunction();
+
+            match self.current() {
+                Some(SyntaxKind::Comma | SyntaxKind::Or) => self.bump(),
+                Some(SyntaxKind::CloseBracket) => continue,
+                Some(token) => {
+                    self.recover(format!("expected ',' or '|' or ']', got {:?}", token), |t| t == SyntaxKind::CloseBracket, |t| t == SyntaxKind::Comma || t == SyntaxKind::Dot);
+                    break;
+                }
+                None => {
+                    self.unexpected_eof = true;
+                    break;
+                }
+            }
+        }
+
+        self.builder.finish_node();
     }
 
     fn recover(
