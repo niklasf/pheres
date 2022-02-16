@@ -102,7 +102,7 @@ impl Parser<'_> {
         if self.current() == Some(SyntaxKind::Dot) {
             self.bump();
         } else {
-            self.push_error("expected '.' after rule or belief".to_owned());
+            self.recover("expected '.' after rule or belief", |t| t == SyntaxKind::Dot, |_| false);
         }
 
         self.builder.finish_node();
@@ -127,7 +127,7 @@ impl Parser<'_> {
             match self.current() {
                 Some(SyntaxKind::CloseParen) => self.bump(),
                 Some(token) => {
-                    self.push_error(format!("expected ')' to close literal, got {:?}", token));
+                    self.recover(format!("expected ')' to close literal, got {:?}", token), |t| t == SyntaxKind::Dot, |t| t == SyntaxKind::Dot || t == SyntaxKind::Semi);
                     self.bump();
                 }
                 None => self.push_error("expected ')', got end of file".to_owned()),
@@ -168,6 +168,21 @@ impl Parser<'_> {
                 self.push_error("expected atom, got end of file".to_owned());
             }
         }
+    }
+
+    fn recover(&mut self, message: impl Into<String>, mut until_inclusive: impl FnMut(SyntaxKind) -> bool, mut until_exclusive: impl FnMut(SyntaxKind) -> bool) {
+        self.push_error(message.into());
+        self.builder.start_node(SyntaxKind::Error.into());
+        while let Some(token) = self.current() {
+            if until_exclusive(token) {
+                break;
+            }
+            self.bump();
+            if until_inclusive(token) {
+                break;
+            }
+        }
+        self.builder.finish_node();
     }
 
     fn push_error(&mut self, message: String) {
