@@ -11,7 +11,8 @@ top(Disc, Pin) :- on(Disc, Pin, _) & not on(_, Pin, Disc).
 
 on(large, 0, table).
 on(med, 0 large).
-on(small, /* 1, table).
+on(small, 1, table).
 
 +!sort : on(Disc, _, table) <-
-  .print(Disc).
+  .print(Disc);
+  +belief.
