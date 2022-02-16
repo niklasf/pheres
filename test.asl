@@ -9,4 +9,4 @@ foo[stop  .
 
 !initial_goal.
 
-+!initial_goal <- .print("Hello world
++!initial_goal <- .print("Hello world"; .fail.

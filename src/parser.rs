@@ -161,10 +161,37 @@ impl Parser<'_> {
         if self.current() == Some(SyntaxKind::Arrow) {
             self.bump();
             self.builder.start_node(SyntaxKind::Body.into());
-            self.bump();
+            loop {
+                self.parse_formula();
+                match self.current() {
+                    Some(SyntaxKind::Comma) => self.bump(),
+                    Some(SyntaxKind::Dot) => {
+                        self.bump();
+                        break;
+                    }
+                    Some(token) =>
+                        self.recover(format!("expected ';' or '.', got {:?}", token), |_| false, |t| t == SyntaxKind::Semi || t == SyntaxKind::Dot),
+                    None => {
+                        self.push_error("expected formula in plan body, got end of file");
+                        break;
+                    }
+                }
+            }
             self.builder.finish_node();
         }
 
+        self.builder.finish_node();
+    }
+
+    fn parse_formula(&mut self) {
+        self.builder.start_node(SyntaxKind::Formula.into());
+        match self.current() {
+            Some(SyntaxKind::BangBang | SyntaxKind::Bang | SyntaxKind::Question | SyntaxKind::MinusPlus | SyntaxKind::Plus | SyntaxKind::Minus) => self.bump(),
+            Some(SyntaxKind::While | SyntaxKind::If | SyntaxKind::For) => todo!(),
+            Some(token) => self.recover(format!("expected formula, got {:?}", token), |_| false, |t| t == SyntaxKind::Semi || t == SyntaxKind::Dot),
+            None => self.push_error("expected formula, got end of file"),
+        }
+        self.parse_term();
         self.builder.finish_node();
     }
 
