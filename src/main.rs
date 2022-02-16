@@ -27,11 +27,7 @@ fn main() {
 
     for error in &lexed.errors {
         let diagnostic = Diagnostic::error()
-            .with_message(match error.kind {
-                SyntaxErrorKind::UnexpectedToken => "unexpected token",
-                SyntaxErrorKind::UnterminatedString => "unterminated string",
-                SyntaxErrorKind::UnterminatedBlockComment => "unterminated block comment",
-            })
+            .with_message(error.kind.to_string())
             .with_labels(vec![Label::primary(
                 file_id,
                 lexed.token_range(error.token_idx),

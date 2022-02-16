@@ -1,4 +1,5 @@
 use std::ops::Range;
+use std::fmt;
 
 use rowan::Language;
 
@@ -128,6 +129,16 @@ pub enum SyntaxErrorKind {
     UnterminatedBlockComment,
     UnterminatedString,
     UnexpectedToken,
+}
+
+impl fmt::Display for SyntaxErrorKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match *self {
+            SyntaxErrorKind::UnexpectedToken => "unexpected token",
+            SyntaxErrorKind::UnterminatedString => "unterminated string",
+            SyntaxErrorKind::UnterminatedBlockComment => "unterminated block comment",
+        })
+    }
 }
 
 pub struct LexedStr<'a> {
