@@ -292,69 +292,119 @@ impl Parser<'_> {
     }
 
     fn parse_term(&mut self) {
-        self.builder.start_node(SyntaxKind::Term.into());
+        let checkpoint = self.builder.checkpoint();
         self.parse_conjunction();
+        let mut wrap = false;
         while self.current() == Some(SyntaxKind::Or) {
+            wrap = true;
             self.parse_conjunction();
         }
-        self.builder.finish_node();
+        if wrap {
+            self.builder
+                .start_node_at(checkpoint, SyntaxKind::Disjunction.into());
+            self.builder.finish_node();
+        }
     }
 
     fn parse_conjunction(&mut self) {
-        self.builder.start_node(SyntaxKind::Conjunction.into());
+        let checkpoint = self.builder.checkpoint();
         self.parse_negation();
+        let mut wrap = false;
         while self.current() == Some(SyntaxKind::And) {
+            wrap = true;
             self.parse_negation();
         }
-        self.builder.finish_node();
+        if wrap {
+            self.builder
+                .start_node_at(checkpoint, SyntaxKind::Conjunction.into());
+            self.builder.finish_node();
+        }
     }
 
     fn parse_negation(&mut self) {
-        self.builder.start_node(SyntaxKind::Negation.into());
+        let checkpoint = self.builder.checkpoint();
+        let mut wrap = false;
         if self.current() == Some(SyntaxKind::Not) {
+            wrap = true;
             self.bump();
         }
         self.parse_comparison();
-        self.builder.finish_node();
+        if wrap {
+            self.builder
+                .start_node_at(checkpoint, SyntaxKind::Negation.into());
+            self.builder.finish_node();
+        }
     }
 
     fn parse_comparison(&mut self) {
-        self.builder.start_node(SyntaxKind::Comparison.into());
+        let checkpoint = self.builder.checkpoint();
         self.parse_additive_expression();
-        if self.current().and_then(|t| t.comparison_operator()).is_some() {
+        let mut wrap = false;
+        if self
+            .current()
+            .and_then(|t| t.comparison_operator())
+            .is_some()
+        {
+            wrap = true;
             self.bump();
             self.parse_additive_expression();
         }
-        self.builder.finish_node();
+        if wrap {
+            self.builder
+                .start_node_at(checkpoint, SyntaxKind::Comparison.into());
+            self.builder.finish_node();
+        }
     }
 
     fn parse_additive_expression(&mut self) {
-        self.builder.start_node(SyntaxKind::AdditiveExpression.into());
+        let checkpoint = self.builder.checkpoint();
         self.parse_multiplicative_expression();
-        while self.current().and_then(|t| t.multiplicative_operator()).is_some() {
+        let mut wrap = false;
+        while self
+            .current()
+            .and_then(|t| t.multiplicative_operator())
+            .is_some()
+        {
+            wrap = true;
             self.bump();
             self.parse_multiplicative_expression();
         }
-        self.builder.finish_node();
+        if wrap {
+            self.builder
+                .start_node_at(checkpoint, SyntaxKind::AdditiveExpression.into());
+            self.builder.finish_node();
+        }
     }
 
     fn parse_multiplicative_expression(&mut self) {
-        self.builder.start_node(SyntaxKind::MultiplicativeExpression.into());
+        let checkpoint = self.builder.checkpoint();
         self.parse_unary_expression();
+        let mut wrap = false;
         while self.current().and_then(|t| t.unary_operator()).is_some() {
+            wrap = true;
             self.bump();
             self.parse_unary_expression();
         }
-        self.builder.finish_node();
+        if wrap {
+            self.builder
+                .start_node_at(checkpoint, SyntaxKind::MultiplicativeExpression.into());
+            self.builder.finish_node();
+        }
     }
 
     fn parse_unary_expression(&mut self) {
-        self.builder.start_node(SyntaxKind::UnaryExpression.into());
-        if self.current().and_then(|t| t.unary_operator()).is_some() {
+        let checkpoint = self.builder.checkpoint();
+        let mut wrap = false;
+        while self.current().and_then(|t| t.unary_operator()).is_some() {
+            wrap = true;
             self.bump();
         }
         self.parse_atom(); // XXX
-        self.builder.finish_node();
+        if wrap {
+            self.builder
+                .start_node_at(checkpoint, SyntaxKind::UnaryExpression.into());
+            self.builder.finish_node();
+        }
     }
 
     fn parse_atom(&mut self) {
@@ -379,7 +429,9 @@ impl Parser<'_> {
                 self.recover(
                     format!("expected atom, got {:?}", token),
                     |_| false,
-                    |t| t == SyntaxKind::Semi || t == SyntaxKind::Dot || t == SyntaxKind::CloseParen,
+                    |t| {
+                        t == SyntaxKind::Semi || t == SyntaxKind::Dot || t == SyntaxKind::CloseParen
+                    },
                 );
             }
             None => self.unexpected_eof = true,

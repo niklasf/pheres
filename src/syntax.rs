@@ -1,4 +1,4 @@
-use std::{fmt, ops::{Range, MulAssign}};
+use std::{fmt, ops::Range};
 
 use rowan::Language;
 
@@ -98,9 +98,8 @@ pub enum SyntaxKind {
     Literal,
     LiteralTerms,
     LiteralAnnotations,
-    Term,
-    Conjunction,
     Disjunction,
+    Conjunction,
     Negation,
     Comparison,
     AdditiveExpression,
