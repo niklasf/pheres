@@ -1,4 +1,8 @@
-disc(small, 1).
+f:-1&2&3&4&(5+5).
+
+f :- l + 2 * 3 + 4.
+
+/* disc(small, 1).
 disc(med, 2).
 disc(large, 3).
 
@@ -9,4 +13,4 @@ on(med, 0, large).
 on(small, 1, table).
 
 +!sort : on(Disc, _, table) <-
-  .print(Disc).
+  .print(Disc). */

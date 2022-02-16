@@ -106,6 +106,7 @@ pub enum SyntaxKind {
     MultiplicativeExpression,
     UnaryExpression,
     PowerExpression,
+    Exponentiation,
     Atom,
     List,
     WhileLoop,
