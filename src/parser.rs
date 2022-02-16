@@ -344,11 +344,7 @@ impl Parser<'_> {
     fn parse_additive_expression(&mut self) {
         let checkpoint = self.builder.checkpoint();
         self.parse_multiplicative_expression();
-        while self
-            .current()
-            .and_then(|t| t.additive_operator())
-            .is_some()
-        {
+        while self.current().and_then(|t| t.additive_operator()).is_some() {
             self.builder
                 .start_node_at(checkpoint, SyntaxKind::AdditiveExpression.into());
             self.bump();
@@ -360,7 +356,11 @@ impl Parser<'_> {
     fn parse_multiplicative_expression(&mut self) {
         let checkpoint = self.builder.checkpoint();
         self.parse_unary_expression();
-        while self.current().and_then(|t| t.multiplicative_operator()).is_some() {
+        while self
+            .current()
+            .and_then(|t| t.multiplicative_operator())
+            .is_some()
+        {
             self.builder
                 .start_node_at(checkpoint, SyntaxKind::MultiplicativeExpression.into());
             self.bump();
@@ -384,7 +384,8 @@ impl Parser<'_> {
         let checkpoint = self.builder.checkpoint();
         self.parse_atom();
         while self.current() == Some(SyntaxKind::Pow) {
-            self.builder.start_node_at(checkpoint, SyntaxKind::Exponentiation.into());
+            self.builder
+                .start_node_at(checkpoint, SyntaxKind::Exponentiation.into());
             self.bump();
             self.parse_unary_expression();
             self.builder.finish_node();
@@ -411,7 +412,11 @@ impl Parser<'_> {
                 self.parse_term();
                 match self.current() {
                     Some(SyntaxKind::CloseParen) => self.bump(),
-                    Some(token) => self.recover(format!("expected ')', got {:?}", token), |t| t == SyntaxKind::CloseParen, |t| t == SyntaxKind::Semi || t == SyntaxKind::Dot),
+                    Some(token) => self.recover(
+                        format!("expected ')', got {:?}", token),
+                        |t| t == SyntaxKind::CloseParen,
+                        |t| t == SyntaxKind::Semi || t == SyntaxKind::Dot,
+                    ),
                     None => self.unexpected_eof = true,
                 }
             }
