@@ -297,6 +297,7 @@ impl Parser<'_> {
         let mut wrap = false;
         while self.current() == Some(SyntaxKind::Or) {
             wrap = true;
+            self.bump();
             self.parse_conjunction();
         }
         if wrap {
@@ -312,6 +313,7 @@ impl Parser<'_> {
         let mut wrap = false;
         while self.current() == Some(SyntaxKind::And) {
             wrap = true;
+            self.bump();
             self.parse_negation();
         }
         if wrap {
@@ -323,9 +325,8 @@ impl Parser<'_> {
 
     fn parse_negation(&mut self) {
         let checkpoint = self.builder.checkpoint();
-        let mut wrap = false;
-        if self.current() == Some(SyntaxKind::Not) {
-            wrap = true;
+        let wrap = self.current() == Some(SyntaxKind::Not);
+        if wrap {
             self.bump();
         }
         self.parse_comparison();
@@ -339,17 +340,13 @@ impl Parser<'_> {
     fn parse_comparison(&mut self) {
         let checkpoint = self.builder.checkpoint();
         self.parse_additive_expression();
-        let mut wrap = false;
         if self
             .current()
             .and_then(|t| t.comparison_operator())
             .is_some()
         {
-            wrap = true;
             self.bump();
             self.parse_additive_expression();
-        }
-        if wrap {
             self.builder
                 .start_node_at(checkpoint, SyntaxKind::Comparison.into());
             self.builder.finish_node();
