@@ -93,7 +93,8 @@ impl Parser<'_> {
         if self.current() == Some(SyntaxKind::Define) {
             self.builder
                 .start_node_at(checkpoint, SyntaxKind::Rule.into());
-            todo!();
+            self.bump();
+            self.parse_term();
         } else {
             self.builder
                 .start_node_at(checkpoint, SyntaxKind::Belief.into());
@@ -298,7 +299,43 @@ impl Parser<'_> {
     }
 
     fn parse_term(&mut self) {
-        self.parse_atom();
+        self.builder.start_node(SyntaxKind::Term.into());
+        self.parse_conjunction();
+        while self.current() == Some(SyntaxKind::Or) {
+            self.parse_conjunction();
+        }
+        self.builder.finish_node();
+    }
+
+    fn parse_conjunction(&mut self) {
+        self.builder.start_node(SyntaxKind::Conjunction.into());
+        self.parse_negation();
+        while self.current() == Some(SyntaxKind::And) {
+            self.parse_negation();
+        }
+        self.builder.finish_node();
+    }
+
+    fn parse_negation(&mut self) {
+        self.builder.start_node(SyntaxKind::Negation.into());
+        if self.current() == Some(SyntaxKind::Not) {
+            self.bump();
+        }
+        self.parse_comparison();
+        self.builder.finish_node();
+    }
+
+    fn parse_comparison(&mut self) {
+        self.builder.start_node(SyntaxKind::ArithmeticExpression.into());
+        self.parse_arithmetic_expression();
+        if self.current().map(|t| t.comparison_operator()).is_some() {
+            self.bump();
+            self.parse_arithmetic_expression();
+        }
+        self.builder.finish_node();
+    }
+
+    fn parse_arithmetic_expression(&mut self) {
     }
 
     fn parse_atom(&mut self) {

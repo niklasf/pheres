@@ -89,25 +89,57 @@ pub enum SyntaxKind {
 
     Belief,
     Rule,
+    InitialGoal,
     Plan,
     PlanAnnotation,
     PlanContext,
+    Body,
+    Formula,
     Literal,
     LiteralTerms,
     LiteralAnnotations,
-    InitialGoal,
+    Term,
+    Conjunction,
+    Disjunction,
+    Negation,
+    Comparison,
+    ArithmeticExpression,
+    ProductExpression,
+    FactorExpression,
+    PowerExpression,
+    Atom,
     List,
-    Goal,
-    Formula,
-    Const,
-    UnaryOp,
-    BinaryOp,
-    Event,
-    Body,
     WhileLoop,
     ForLoop,
     IfThenElse,
-    Root,
+    Root, // last variant
+}
+
+impl SyntaxKind {
+    pub fn comparison_operator(self) -> Option<ComparisonOperator> {
+        Some(match self {
+            SyntaxKind::LtEq => ComparisonOperator::LtEq,
+            SyntaxKind::GtEq => ComparisonOperator::GtEq,
+            SyntaxKind::NotEqual => ComparisonOperator::NotEqual,
+            SyntaxKind::Equal => ComparisonOperator::Equal,
+            SyntaxKind::Decompose => ComparisonOperator::Decompose,
+            SyntaxKind::Eq => ComparisonOperator::Eq,
+            SyntaxKind::Lt => ComparisonOperator::Lt,
+            SyntaxKind::Gt => ComparisonOperator::Gt,
+            _ => return None,
+        })
+    }
+}
+
+pub enum ComparisonOperator {
+    LtEq,
+    GtEq,
+    NotEqual,
+    Equal,
+    Decompose,
+    Eq,
+    Lt,
+    Gt,
 }
 
 impl From<SyntaxKind> for rowan::SyntaxKind {
