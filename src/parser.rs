@@ -346,7 +346,7 @@ impl Parser<'_> {
         self.parse_multiplicative_expression();
         while self
             .current()
-            .and_then(|t| t.multiplicative_operator())
+            .and_then(|t| t.additive_operator())
             .is_some()
         {
             self.builder
@@ -360,7 +360,7 @@ impl Parser<'_> {
     fn parse_multiplicative_expression(&mut self) {
         let checkpoint = self.builder.checkpoint();
         self.parse_unary_expression();
-        while self.current().and_then(|t| t.unary_operator()).is_some() {
+        while self.current().and_then(|t| t.multiplicative_operator()).is_some() {
             self.builder
                 .start_node_at(checkpoint, SyntaxKind::MultiplicativeExpression.into());
             self.bump();
