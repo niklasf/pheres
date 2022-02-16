@@ -74,5 +74,19 @@ fn main() {
         .unwrap();
     }
 
+    if parsed.unexpected_eof {
+        let last = lexed.text.len() - 1;
+        let diagnostic = Diagnostic::error()
+            .with_message("unexpected end of file")
+            .with_labels(vec![Label::primary(file_id, last..last)]);
+        term::emit(
+            &mut diagnostic_stream.lock(),
+            &diagnostic_config,
+            &files,
+            &diagnostic,
+        )
+        .unwrap();
+    }
+
     print(0, SyntaxNode::new_root(parsed.green_node).into());
 }

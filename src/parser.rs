@@ -8,6 +8,7 @@ use crate::syntax::{LexedStr, LexedStrIter, SyntaxKind, TokenIdx};
 pub struct Parsed {
     pub green_node: GreenNode,
     pub errors: Vec<ParserError>,
+    pub unexpected_eof: bool,
 }
 
 #[derive(Debug)]
@@ -26,6 +27,7 @@ struct Parser<'a> {
     builder: GreenNodeBuilder<'static>,
     tokens: LexedStrIter<'a>,
     errors: Vec<ParserError>,
+    unexpected_eof: bool,
 }
 
 pub fn parse(lexed: &LexedStr<'_>) -> Parsed {
@@ -33,6 +35,7 @@ pub fn parse(lexed: &LexedStr<'_>) -> Parsed {
         builder: GreenNodeBuilder::new(),
         tokens: lexed.iter(),
         errors: Vec::new(),
+        unexpected_eof: false,
     }
     .parse()
 }
@@ -79,6 +82,7 @@ impl Parser<'_> {
         Parsed {
             green_node: self.builder.finish(),
             errors: self.errors,
+            unexpected_eof: self.unexpected_eof,
         }
     }
 
@@ -126,7 +130,7 @@ impl Parser<'_> {
                 return;
             }
             None => {
-                self.push_error("unexpected end of file after '!'");
+                self.unexpected_eof = true;
                 self.builder.finish_node();
                 return;
             }
@@ -139,7 +143,7 @@ impl Parser<'_> {
                 |t| t == SyntaxKind::Dot,
                 |_| false,
             ),
-            None => self.push_error("expected '.' after initial goal, got end of file"),
+            None => self.unexpected_eof = true,
         }
 
         self.builder.finish_node();
@@ -190,7 +194,7 @@ impl Parser<'_> {
                         |t| t == SyntaxKind::Semi || t == SyntaxKind::Dot,
                     ),
                     None => {
-                        self.push_error("expected formula in plan body, got end of file");
+                        self.unexpected_eof = true;
                         break;
                     }
                 }
@@ -214,7 +218,7 @@ impl Parser<'_> {
             ) => self.bump(),
             Some(SyntaxKind::While | SyntaxKind::If | SyntaxKind::For) => todo!(),
             Some(_) => (),
-            None => self.push_error("expected formula, got end of file"),
+            None => self.unexpected_eof = true,
         }
         self.parse_term();
         self.builder.finish_node();
@@ -234,7 +238,7 @@ impl Parser<'_> {
                 self.builder.finish_node();
                 return;
             }
-            None => self.push_error("expected literal, got end of file"),
+            None => self.unexpected_eof = true,
         }
 
         if self.current() == Some(SyntaxKind::OpenParen) {
@@ -256,7 +260,7 @@ impl Parser<'_> {
                         |t| t == SyntaxKind::Dot || t == SyntaxKind::Semi,
                     );
                 }
-                None => self.push_error("expected ')', got end of file"),
+                None => self.unexpected_eof = true,
             }
 
             self.builder.finish_node();
@@ -283,7 +287,7 @@ impl Parser<'_> {
                             |t| t == SyntaxKind::Dot || t == SyntaxKind::Semi,
                         );
                     }
-                    None => self.push_error("expected ']', got end of file"),
+                    None => self.unexpected_eof = true,
                 }
             }
 
@@ -318,9 +322,7 @@ impl Parser<'_> {
                 self.bump();
                 self.push_error(format!("expected atom, got {:?}", token));
             }
-            None => {
-                self.push_error("expected atom, got end of file");
-            }
+            None => self.unexpected_eof = true,
         }
     }
 

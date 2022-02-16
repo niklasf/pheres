@@ -155,7 +155,7 @@ impl fmt::Display for SyntaxErrorKind {
 
 #[derive(Debug)]
 pub struct LexedStr<'a> {
-    text: &'a str,
+    pub text: &'a str,
     kind: Vec<SyntaxKind>,
     start: Vec<usize>,
     pub errors: Vec<SyntaxError>,
