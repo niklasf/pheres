@@ -1,8 +1,8 @@
 use std::fmt;
-use std::iter::Peekable;
+
 use rowan::{GreenNode, GreenNodeBuilder};
 
-use crate::syntax::{LexedStr, SyntaxKind, LexedStrIter};
+use crate::syntax::{LexedStr, LexedStrIter, SyntaxKind, TokenIdx};
 
 #[derive(Debug)]
 pub struct Parsed {
@@ -11,30 +11,27 @@ pub struct Parsed {
 }
 
 #[derive(Debug)]
-pub struct ParserError(String);
-
-impl ParserError {
-    fn unexpected_eof() -> ParserError {
-        ParserError("unexpected end of file".to_owned())
-    }
+pub struct ParserError {
+    pub message: String,
+    pub token_idx: TokenIdx,
 }
 
 impl fmt::Display for ParserError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.0)
+        f.write_str(&self.message)
     }
 }
 
 struct Parser<'a> {
     builder: GreenNodeBuilder<'static>,
-    tokens: Peekable<LexedStrIter<'a>>,
+    tokens: LexedStrIter<'a>,
     errors: Vec<ParserError>,
 }
 
-pub fn parse(lexed: LexedStr<'_>) -> Parsed {
+pub fn parse(lexed: &LexedStr<'_>) -> Parsed {
     Parser {
         builder: GreenNodeBuilder::new(),
-        tokens: lexed.iter().peekable(),
+        tokens: lexed.iter(),
         errors: Vec::new(),
     }
     .parse()
@@ -42,7 +39,11 @@ pub fn parse(lexed: LexedStr<'_>) -> Parsed {
 
 impl Parser<'_> {
     fn skip_noise(&mut self) {
-        while let Some((SyntaxKind::Whitespace | SyntaxKind::LineComment | SyntaxKind::BlockComment, _)) = self.tokens.peek() {
+        while let Some((
+            SyntaxKind::Whitespace | SyntaxKind::LineComment | SyntaxKind::BlockComment,
+            _,
+        )) = self.tokens.peek()
+        {
             self.bump();
         }
     }
@@ -54,7 +55,7 @@ impl Parser<'_> {
 
     fn current(&mut self) -> Option<SyntaxKind> {
         self.skip_noise();
-        self.tokens.peek().map(|(token, _)| *token)
+        self.tokens.peek().map(|(token, _)| token)
     }
 
     fn eat_while(&mut self, mut predicate: impl FnMut(SyntaxKind) -> bool) {
@@ -88,7 +89,24 @@ impl Parser<'_> {
     fn parse_rule_or_belief(&mut self) {
         let checkpoint = self.builder.checkpoint();
         self.parse_literal();
-        self.builder.start_node_at(checkpoint, SyntaxKind::Belief.into());
+
+        if self.current() == Some(SyntaxKind::Define) {
+            self.builder
+                .start_node_at(checkpoint, SyntaxKind::Rule.into());
+            todo!();
+        } else {
+            self.builder
+                .start_node_at(checkpoint, SyntaxKind::Belief.into());
+        }
+
+        if self.current() == Some(SyntaxKind::Dot) {
+            self.bump();
+        } else {
+            self.push_error("expected '.' after rule or belief".to_owned());
+        }
+
+        self.builder
+            .start_node_at(checkpoint, SyntaxKind::Belief.into());
         self.builder.finish_node();
     }
 
@@ -113,7 +131,14 @@ impl Parser<'_> {
 
     fn parse_atom(&mut self) {
         match self.current() {
-            Some(SyntaxKind::Variable | SyntaxKind::Integer | SyntaxKind::Float | SyntaxKind::True | SyntaxKind::False | SyntaxKind::String) => self.bump(),
+            Some(
+                SyntaxKind::Variable
+                | SyntaxKind::Integer
+                | SyntaxKind::Float
+                | SyntaxKind::True
+                | SyntaxKind::False
+                | SyntaxKind::String,
+            ) => self.bump(),
             Some(SyntaxKind::Functor) => self.parse_literal(),
             Some(SyntaxKind::OpenParen) => {
                 todo!()
@@ -123,11 +148,18 @@ impl Parser<'_> {
             }
             Some(token) => {
                 self.bump();
-                self.errors.push(ParserError(format!("expected atom, got {:?}", token)));
-            },
+                self.push_error(format!("expected atom, got {:?}", token));
+            }
             None => {
-                self.errors.push(ParserError::unexpected_eof());
+                self.push_error("unexpected end of file".to_owned());
             }
         }
+    }
+
+    fn push_error(&mut self, message: String) {
+        self.errors.push(ParserError {
+            message,
+            token_idx: self.tokens.current_token_idx(),
+        });
     }
 }

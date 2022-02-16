@@ -1,9 +1,11 @@
-use std::ops::Range;
-use std::fmt;
+use std::{fmt, ops::Range};
 
 use rowan::Language;
 
 use crate::lexer::{tokenize, TokenKind};
+
+#[derive(Copy, Clone, Debug)]
+pub struct TokenIdx(usize);
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum AgentSpeakLanguage {}
@@ -128,7 +130,7 @@ impl Language for AgentSpeakLanguage {
 #[derive(Debug)]
 pub struct SyntaxError {
     pub kind: SyntaxErrorKind,
-    pub token_idx: usize,
+    pub token_idx: TokenIdx,
 }
 
 #[derive(Debug)]
@@ -174,7 +176,7 @@ impl LexedStr<'_> {
                     if !terminated {
                         res.errors.push(SyntaxError {
                             kind: SyntaxErrorKind::UnterminatedBlockComment,
-                            token_idx: res.kind.len(),
+                            token_idx: TokenIdx(res.kind.len()),
                         });
                     }
                     SyntaxKind::BlockComment
@@ -189,7 +191,7 @@ impl LexedStr<'_> {
                     if !terminated {
                         res.errors.push(SyntaxError {
                             kind: SyntaxErrorKind::UnterminatedString,
-                            token_idx: res.kind.len(),
+                            token_idx: TokenIdx(res.kind.len()),
                         });
                     }
                     SyntaxKind::String
@@ -254,7 +256,7 @@ impl LexedStr<'_> {
                 TokenKind::Unknown => {
                     res.errors.push(SyntaxError {
                         kind: SyntaxErrorKind::UnexpectedToken,
-                        token_idx: res.kind.len(),
+                        token_idx: TokenIdx(res.kind.len()),
                     });
                     SyntaxKind::Error
                 }
@@ -275,14 +277,14 @@ impl LexedStr<'_> {
         self.kind.len() - 1
     }
 
-    pub fn token_range(&self, idx: usize) -> Range<usize> {
-        self.start[idx]..self.start[idx + 1]
+    pub fn token_range(&self, idx: TokenIdx) -> Range<usize> {
+        self.start[idx.0]..self.start[idx.0 + 1]
     }
 
     pub fn iter(&self) -> LexedStrIter<'_> {
         LexedStrIter {
             lexed: self,
-            token_idx: 0,
+            token_idx: TokenIdx(0),
         }
     }
 }
@@ -290,22 +292,32 @@ impl LexedStr<'_> {
 #[derive(Clone)]
 pub struct LexedStrIter<'a> {
     lexed: &'a LexedStr<'a>,
-    token_idx: usize,
+    token_idx: TokenIdx,
 }
 
 impl<'a> Iterator for LexedStrIter<'a> {
     type Item = (SyntaxKind, &'a str);
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.token_idx < self.lexed.len() {
-            let res = Some((
-                self.lexed.kind[self.token_idx],
-                &self.lexed.text[self.lexed.token_range(self.token_idx)],
-            ));
-            self.token_idx += 1;
-            res
-        } else {
-            None
+        let res = self.peek();
+        if res.is_some() {
+            self.token_idx = TokenIdx(self.token_idx.0 + 1);
         }
+        res
+    }
+}
+
+impl<'a> LexedStrIter<'a> {
+    pub fn current_token_idx(&self) -> TokenIdx {
+        self.token_idx
+    }
+
+    pub fn peek(&self) -> Option<(SyntaxKind, &'a str)> {
+        (self.token_idx.0 < self.lexed.len()).then(|| {
+            (
+                self.lexed.kind[self.token_idx.0],
+                &self.lexed.text[self.lexed.token_range(self.token_idx)],
+            )
+        })
     }
 }
