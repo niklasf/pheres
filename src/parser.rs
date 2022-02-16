@@ -318,6 +318,7 @@ impl Parser<'_> {
     fn parse_negation(&mut self) {
         if self.current() == Some(SyntaxKind::Not) {
             self.builder.start_node(SyntaxKind::Negation.into());
+            self.bump();
             self.parse_negation();
             self.builder.finish_node();
         } else {
