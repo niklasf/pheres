@@ -45,5 +45,6 @@ fn main() {
         .unwrap();
     }
 
-    let _parsed = dbg!(parse(lexed));
+    let parsed = parse(lexed);
+    println!("{}", parsed.green_node);
 }
