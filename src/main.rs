@@ -1,12 +1,14 @@
-use codespan_reporting::files::SimpleFiles;
-use codespan_reporting::diagnostic::{Diagnostic, Label};
-use codespan_reporting::term::termcolor::{StandardStream, ColorChoice};
-use codespan_reporting::term;
+use codespan_reporting::{
+    diagnostic::{Diagnostic, Label},
+    files::SimpleFiles,
+    term,
+    term::termcolor::{ColorChoice, StandardStream},
+};
 
 mod lexer;
 mod syntax;
 
-use syntax::LexedStr;
+use crate::syntax::{LexedStr, SyntaxErrorKind};
 
 fn main() {
     let mut files = SimpleFiles::new();
@@ -21,11 +23,21 @@ fn main() {
 
     for error in &lexed.errors {
         let diagnostic = Diagnostic::error()
-            .with_message("syntax error")
-            .with_labels(vec![
-                Label::primary(file_id, lexed.token_range(error.token_idx)).with_message("unterminated or unknown")
-            ]);
-
-        term::emit(&mut diagnostic_stream.lock(), &diagnostic_config, &files, &diagnostic).unwrap();
+            .with_message(match error.kind {
+                SyntaxErrorKind::UnexpectedToken => "unexpected token",
+                SyntaxErrorKind::UnterminatedString => "unterminated string",
+                SyntaxErrorKind::UnterminatedBlockComment => "unterminated block comment",
+            })
+            .with_labels(vec![Label::primary(
+                file_id,
+                lexed.token_range(error.token_idx),
+            )]);
+        term::emit(
+            &mut diagnostic_stream.lock(),
+            &diagnostic_config,
+            &files,
+            &diagnostic,
+        )
+        .unwrap();
     }
 }

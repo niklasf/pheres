@@ -1,7 +1,8 @@
+use std::ops::Range;
+
 use rowan::Language;
 
 use crate::lexer::{tokenize, TokenKind};
-use std::ops::Range;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum AgentSpeakLanguage {}
@@ -111,13 +112,13 @@ impl Language for AgentSpeakLanguage {
 }
 
 #[derive(Debug)]
-pub struct ParserError {
-    pub kind: ParserErrorKind,
+pub struct SyntaxError {
+    pub kind: SyntaxErrorKind,
     pub token_idx: usize,
 }
 
 #[derive(Debug)]
-pub enum ParserErrorKind {
+pub enum SyntaxErrorKind {
     UnterminatedBlockComment,
     UnterminatedString,
     UnexpectedToken,
@@ -127,7 +128,7 @@ pub struct LexedStr<'a> {
     text: &'a str,
     kind: Vec<SyntaxKind>,
     start: Vec<usize>,
-    pub errors: Vec<ParserError>,
+    pub errors: Vec<SyntaxError>,
 }
 
 impl LexedStr<'_> {
@@ -147,8 +148,8 @@ impl LexedStr<'_> {
                 TokenKind::LineComment => SyntaxKind::LineComment,
                 TokenKind::BlockComment { terminated } => {
                     if !terminated {
-                        res.errors.push(ParserError {
-                            kind: ParserErrorKind::UnterminatedBlockComment,
+                        res.errors.push(SyntaxError {
+                            kind: SyntaxErrorKind::UnterminatedBlockComment,
                             token_idx: res.kind.len(),
                         });
                     }
@@ -162,8 +163,8 @@ impl LexedStr<'_> {
                 TokenKind::Float => SyntaxKind::Float,
                 TokenKind::String { terminated } => {
                     if !terminated {
-                        res.errors.push(ParserError {
-                            kind: ParserErrorKind::UnterminatedString,
+                        res.errors.push(SyntaxError {
+                            kind: SyntaxErrorKind::UnterminatedString,
                             token_idx: res.kind.len(),
                         });
                     }
@@ -227,8 +228,8 @@ impl LexedStr<'_> {
                 TokenKind::At => SyntaxKind::At,
 
                 TokenKind::Unknown => {
-                    res.errors.push(ParserError {
-                        kind: ParserErrorKind::UnexpectedToken,
+                    res.errors.push(SyntaxError {
+                        kind: SyntaxErrorKind::UnexpectedToken,
                         token_idx: res.kind.len(),
                     });
                     SyntaxKind::Unknown
