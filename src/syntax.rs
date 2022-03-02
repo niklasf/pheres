@@ -60,6 +60,7 @@ pub enum SyntaxKind {
     MinusPlus,
 
     Not,
+    Tilde,
     Plus,
     Minus,
     Slash,
@@ -330,6 +331,7 @@ impl LexedStr<'_> {
                 TokenKind::MinusPlus => SyntaxKind::MinusPlus,
 
                 TokenKind::Not => SyntaxKind::Not,
+                TokenKind::Tilde => SyntaxKind::Tilde,
                 TokenKind::Plus => SyntaxKind::Plus,
                 TokenKind::Minus => SyntaxKind::Minus,
                 TokenKind::Slash => SyntaxKind::Slash,

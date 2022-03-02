@@ -85,6 +85,8 @@ pub enum TokenKind {
 
     /// `not`
     Not,
+    /// `~`
+    Tilde,
     /// `+`
     Plus,
     /// `-`
@@ -298,6 +300,7 @@ impl Cursor<'_> {
                     _ => TokenKind::Or,
                 },
                 '+' => TokenKind::Plus,
+                '~' => TokenKind::Tilde,
                 '.' => {
                     if self.first().is_ascii_lowercase() {
                         self.bump();
