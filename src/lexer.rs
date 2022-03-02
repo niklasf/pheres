@@ -37,6 +37,8 @@ pub enum TokenKind {
     If,
     /// `else`
     Else,
+    /// `elif`
+    Elif,
     /// `while`
     While,
     /// `for`
@@ -64,10 +66,14 @@ pub enum TokenKind {
 
     /// `<-`
     Arrow,
+    /// `<:`
+    ColonArrow,
     /// `:-`
     Define,
-    /// `:`,
+    /// `:`
     Colon,
+    /// `::`
+    ColonColon,
 
     /// `|&|`
     ForkJoinAnd,
@@ -239,9 +245,17 @@ impl Cursor<'_> {
                         self.bump();
                         TokenKind::Define
                     }
+                    ':' => {
+                        self.bump();
+                        TokenKind::ColonColon
+                    }
                     _ => TokenKind::Colon,
                 },
                 '<' => match self.first() {
+                    ':' => {
+                        self.bump();
+                        TokenKind::ColonArrow
+                    }
                     '-' => {
                         self.bump();
                         TokenKind::Arrow
@@ -317,6 +331,7 @@ impl Cursor<'_> {
                 'f' if self.followed_by("alse") => TokenKind::False,
                 'i' if self.followed_by("f") => TokenKind::If,
                 'e' if self.followed_by("lse") => TokenKind::Else,
+                'e' if self.followed_by("lif") => TokenKind::Elif,
                 'w' if self.followed_by("hile") => TokenKind::While,
                 'f' if self.followed_by("or") => TokenKind::For,
                 'i' if self.followed_by("nclude") => TokenKind::Include,

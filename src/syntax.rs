@@ -33,6 +33,7 @@ pub enum SyntaxKind {
 
     If,
     Else,
+    Elif,
     While,
     For,
 
@@ -48,8 +49,10 @@ pub enum SyntaxKind {
     CloseBrace,
 
     Arrow,
+    ColonArrow,
     Define,
     Colon,
+    ColonColon,
 
     ForkJoinAnd,
     ForkJoinXor,
@@ -304,6 +307,7 @@ impl LexedStr<'_> {
 
                 TokenKind::If => SyntaxKind::If,
                 TokenKind::Else => SyntaxKind::Else,
+                TokenKind::Elif => SyntaxKind::Elif,
                 TokenKind::While => SyntaxKind::While,
                 TokenKind::For => SyntaxKind::For,
 
@@ -319,8 +323,10 @@ impl LexedStr<'_> {
                 TokenKind::CloseBrace => SyntaxKind::CloseBrace,
 
                 TokenKind::Arrow => SyntaxKind::Arrow,
+                TokenKind::ColonArrow => SyntaxKind::ColonArrow,
                 TokenKind::Define => SyntaxKind::Define,
                 TokenKind::Colon => SyntaxKind::Colon,
+                TokenKind::ColonColon => SyntaxKind::ColonColon,
 
                 TokenKind::ForkJoinAnd => SyntaxKind::ForkJoinAnd,
                 TokenKind::ForkJoinXor => SyntaxKind::ForkJoinXor,
