@@ -1,0 +1,9 @@
+[package]
+name = "pheres-rt"
+version = "0.1.0"
+description = "Experimental AgentSpeak runtime"
+repository = "https://github.com/niklasf/pheres.git"
+license = "GPL-3.0+"
+categories = ["compilers", "parser-implementations"]
+keywords = ["agentspeak"]
+edition = "2021"
