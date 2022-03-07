@@ -7,3 +7,6 @@ license = "GPL-3.0+"
 categories = ["compilers", "parser-implementations"]
 keywords = ["agentspeak"]
 edition = "2021"
+
+[build-dependencies]
+cbindgen = "0.20"
