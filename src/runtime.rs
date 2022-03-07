@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 struct VariableId(u64);
 
 enum Value {
@@ -22,4 +24,12 @@ enum UnaryOparator {
 
 enum BinaryOperator {
     Plus,
+}
+
+struct State {
+    scope: HashMap<VariableId, Value>,
+}
+
+struct Context {
+    stack: Vec<State>,
 }
