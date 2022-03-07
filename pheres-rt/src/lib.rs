@@ -65,3 +65,18 @@ pub extern "C" fn pheres_value_new_atom(ptr: *const u8, len: usize) -> RawValue 
     forget(annotations);
     atom
 }
+
+#[no_mangle]
+pub extern "C" fn pheres_value_push_arg(term: &mut RawValue, arg: RawValue) {
+    match term {
+        RawValue::Term { args_ptr, args_len, args_capacity, .. } => {
+            let mut args = unsafe { Vec::from_raw_parts(*args_ptr, *args_len, *args_capacity) };
+            args.push(arg);
+            *args_ptr = args.as_mut_ptr();
+            *args_len = args.len();
+            *args_capacity = args.capacity();
+            forget(args);
+        }
+        _ => unreachable!("pheres_value_push_arg called on non-term")
+    }
+}
