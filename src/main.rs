@@ -9,6 +9,7 @@ use rowan::NodeOrToken;
 mod lexer;
 mod parser;
 mod syntax;
+mod runtime;
 
 use crate::{
     parser::parse,
